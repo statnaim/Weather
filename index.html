@@ -1,0 +1,6485 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0ea5e9">
+<meta name="description" content="WeatherBD — বাংলাদেশের আবহাওয়া, এক নজরে।">
+<title>WeatherBD 🇧🇩 — বাংলাদেশের আবহাওয়া</title>
+
+<!-- Lightweight chart library -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+
+<style>
+:root{
+  --bg:#eef7ff;
+  --surface:rgba(255,255,255,.86);
+  --surface-solid:#fff;
+  --text:#10243e;
+  --muted:#60758d;
+  --primary:#0ea5e9;
+  --primary2:#2563eb;
+  --border:rgba(15,64,100,.12);
+  --shadow:0 18px 50px rgba(20,71,115,.12);
+  --radius:24px;
+  --danger:#ef4444;
+  --warning:#f59e0b;
+  --success:#16a34a;
+}
+
+body.dark{
+  --bg:#071521;
+  --surface:rgba(15,32,47,.88);
+  --surface-solid:#0d2233;
+  --text:#eaf6ff;
+  --muted:#9db1c4;
+  --border:rgba(255,255,255,.10);
+  --shadow:0 20px 55px rgba(0,0,0,.35);
+}
+
+*{box-sizing:border-box}
+
+html{
+  scroll-behavior:smooth;
+}
+
+body{
+  margin:0;
+  font-family:
+    Inter,
+    system-ui,
+    -apple-system,
+    "Segoe UI",
+    "Noto Sans Bengali",
+    sans-serif;
+  color:var(--text);
+  background:
+    radial-gradient(
+      circle at 10% 0%,
+      rgba(14,165,233,.16),
+      transparent 28%
+    ),
+    var(--bg);
+  line-height:1.5;
+  overflow-x:hidden;
+}
+
+button,
+input,
+select{
+  font:inherit;
+}
+
+button{
+  cursor:pointer;
+}
+
+a{
+  color:inherit;
+  text-decoration:none;
+}
+
+.app{
+  min-height:100vh;
+}
+
+.container{
+  width:min(1180px,calc(100% - 28px));
+  margin:auto;
+}
+
+/* =========================
+   HEADER
+========================= */
+
+.topbar{
+  position:sticky;
+  top:0;
+  z-index:100;
+  backdrop-filter:blur(18px);
+  background:color-mix(
+    in srgb,
+    var(--surface-solid) 75%,
+    transparent
+  );
+  border-bottom:1px solid var(--border);
+}
+
+.nav{
+  height:72px;
+  display:flex;
+  align-items:center;
+  gap:18px;
+}
+
+.brand{
+  font-weight:900;
+  font-size:1.18rem;
+  display:flex;
+  align-items:center;
+  gap:8px;
+  white-space:nowrap;
+}
+
+.brand span{
+  color:var(--primary);
+}
+
+.navlinks{
+  display:flex;
+  gap:4px;
+  margin-left:auto;
+}
+
+.navlinks a{
+  padding:10px 13px;
+  border-radius:12px;
+  color:var(--muted);
+  font-weight:700;
+  font-size:.92rem;
+}
+
+.navlinks a:hover,
+.navlinks a.active{
+  background:rgba(14,165,233,.10);
+  color:var(--primary);
+}
+
+.iconbtn{
+  width:42px;
+  height:42px;
+  border:1px solid var(--border);
+  border-radius:13px;
+  background:var(--surface);
+  color:var(--text);
+  display:grid;
+  place-items:center;
+}
+
+.hamb{
+  display:none;
+}
+
+/* =========================
+   GENERAL
+========================= */
+
+main{
+  padding:26px 0 60px;
+}
+
+.section{
+  margin-top:24px;
+}
+
+.section-head{
+  display:flex;
+  justify-content:space-between;
+  align-items:end;
+  gap:12px;
+  margin-bottom:13px;
+}
+
+.section-head h2{
+  margin:0;
+  font-size:1.22rem;
+}
+
+.section-head p{
+  margin:3px 0 0;
+  color:var(--muted);
+  font-size:.88rem;
+}
+
+.grid2{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:16px;
+}
+
+.grid3{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:16px;
+}
+
+.card{
+  background:var(--surface);
+  border:1px solid var(--border);
+  box-shadow:var(--shadow);
+  border-radius:var(--radius);
+  padding:20px;
+  backdrop-filter:blur(16px);
+}
+
+/* =========================
+   SEARCH
+========================= */
+
+.search-panel{
+  padding:20px;
+  border:1px solid var(--border);
+  background:var(--surface);
+  box-shadow:var(--shadow);
+  border-radius:var(--radius);
+  backdrop-filter:blur(18px);
+}
+
+.search-row{
+  display:grid;
+  grid-template-columns:1fr auto auto;
+  gap:10px;
+}
+
+.searchbox{
+  position:relative;
+}
+
+.searchbox input{
+  width:100%;
+  height:52px;
+  border:1px solid var(--border);
+  background:var(--surface-solid);
+  color:var(--text);
+  border-radius:15px;
+  padding:0 16px 0 46px;
+  outline:none;
+}
+
+.searchbox input:focus,
+select:focus,
+input:focus{
+  border-color:var(--primary);
+  box-shadow:0 0 0 4px rgba(14,165,233,.12);
+}
+
+.searchicon{
+  position:absolute;
+  left:16px;
+  top:50%;
+  transform:translateY(-50%);
+}
+
+.search-results{
+  position:absolute;
+  top:58px;
+  left:0;
+  right:0;
+  z-index:30;
+  background:var(--surface-solid);
+  border:1px solid var(--border);
+  border-radius:15px;
+  box-shadow:var(--shadow);
+  overflow:hidden;
+  display:none;
+}
+
+.search-results button{
+  display:block;
+  width:100%;
+  text-align:left;
+  border:0;
+  background:transparent;
+  color:var(--text);
+  padding:12px 15px;
+}
+
+.search-results button:hover{
+  background:rgba(14,165,233,.08);
+}
+
+.filters{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+  margin-top:12px;
+}
+
+select{
+  width:100%;
+  height:48px;
+  border:1px solid var(--border);
+  background:var(--surface-solid);
+  color:var(--text);
+  border-radius:13px;
+  padding:0 12px;
+  outline:none;
+}
+
+.status{
+  font-size:.88rem;
+  color:var(--muted);
+  margin-top:10px;
+  min-height:22px;
+}
+
+.demo{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  padding:5px 9px;
+  border-radius:999px;
+  background:rgba(245,158,11,.14);
+  color:#b45309;
+  font-size:.75rem;
+  font-weight:900;
+}
+
+body.dark .demo{
+  color:#fbbf24;
+}
+
+/* =========================
+   BUTTONS
+========================= */
+
+.btn{
+  border:0;
+  border-radius:14px;
+  padding:0 18px;
+  min-height:52px;
+  font-weight:800;
+  transition:.2s;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:7px;
+}
+
+.btn.primary{
+  background:linear-gradient(
+    135deg,
+    var(--primary),
+    var(--primary2)
+  );
+  color:#fff;
+  box-shadow:0 10px 25px rgba(14,165,233,.25);
+}
+
+.btn.secondary{
+  background:rgba(14,165,233,.09);
+  color:var(--primary);
+  border:1px solid rgba(14,165,233,.15);
+}
+
+.btn:hover{
+  transform:translateY(-2px);
+}
+
+/* =========================
+   MAIN WEATHER
+========================= */
+
+.hero{
+  display:grid;
+  grid-template-columns:1fr;
+  gap:18px;
+  margin-bottom:22px;
+}
+
+.weather-card{
+  position:relative;
+  overflow:hidden;
+  padding:30px;
+  border-radius:30px;
+  color:#fff;
+  background:
+    linear-gradient(
+      135deg,
+      #0ea5e9,
+      #2563eb 60%,
+      #4f46e5
+    );
+  box-shadow:
+    0 25px 60px rgba(37,99,235,.25);
+}
+
+.weather-card.night{
+  background:
+    linear-gradient(
+      135deg,
+      #0b1d3a,
+      #172554 58%,
+      #312e81
+    );
+}
+
+.weather-card.rain{
+  background:
+    linear-gradient(
+      135deg,
+      #0f6f9f,
+      #164e63 60%,
+      #1e3a5f
+    );
+}
+
+.weather-card.hot{
+  background:
+    linear-gradient(
+      135deg,
+      #f59e0b,
+      #ef4444 65%,
+      #be123c
+    );
+}
+
+.weather-content{
+  position:relative;
+  z-index:2;
+}
+
+.weather-top{
+  display:flex;
+  justify-content:space-between;
+  gap:18px;
+  align-items:flex-start;
+}
+
+.location{
+  font-size:1.55rem;
+  font-weight:900;
+}
+
+.country{
+  opacity:.78;
+}
+
+.weather-icon{
+  font-size:5rem;
+  line-height:1;
+  filter:drop-shadow(
+    0 12px 16px rgba(0,0,0,.18)
+  );
+  animation:float 4s ease-in-out infinite;
+}
+
+.temp{
+  font-size:clamp(4.2rem,12vw,7.2rem);
+  line-height:.9;
+  font-weight:900;
+  letter-spacing:-.07em;
+  margin:10px 0;
+}
+
+.condition{
+  font-size:1.25rem;
+  font-weight:800;
+}
+
+.feels{
+  opacity:.85;
+}
+
+.metrics{
+  display:grid;
+  grid-template-columns:repeat(6,1fr);
+  gap:10px;
+  margin-top:25px;
+}
+
+.metric{
+  background:rgba(255,255,255,.12);
+  border:1px solid rgba(255,255,255,.15);
+  padding:13px;
+  border-radius:16px;
+}
+
+.metric small{
+  display:block;
+  opacity:.72;
+  font-size:.75rem;
+}
+
+.metric b{
+  display:block;
+  margin-top:4px;
+}
+
+/* Weather decorations */
+
+.weather-decoration{
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  opacity:.55;
+}
+
+.cloud{
+  position:absolute;
+  width:140px;
+  height:42px;
+  border-radius:60px;
+  background:rgba(255,255,255,.13);
+  animation:drift 20s linear infinite;
+}
+
+.cloud:before,
+.cloud:after{
+  content:"";
+  position:absolute;
+  border-radius:50%;
+  background:inherit;
+}
+
+.cloud:before{
+  width:65px;
+  height:65px;
+  left:22px;
+  bottom:8px;
+}
+
+.cloud:after{
+  width:48px;
+  height:48px;
+  left:68px;
+  bottom:4px;
+}
+
+.c1{
+  top:18%;
+  left:-10%;
+}
+
+.c2{
+  top:58%;
+  left:65%;
+  animation-duration:28s;
+}
+
+.c3{
+  top:35%;
+  left:35%;
+  animation-duration:24s;
+}
+
+.rain-particles{
+  position:absolute;
+  inset:0;
+  background-image:
+    linear-gradient(
+      110deg,
+      transparent 45%,
+      rgba(255,255,255,.35) 46%,
+      transparent 47%
+    );
+  background-size:22px 34px;
+  animation:rain 1.1s linear infinite;
+  opacity:.22;
+}
+
+/* =========================
+   ADVICE
+========================= */
+
+.advice{
+  display:flex;
+  gap:14px;
+  align-items:center;
+}
+
+.advice-icon{
+  font-size:2rem;
+}
+
+.advice b{
+  display:block;
+}
+
+.advice span{
+  color:var(--muted);
+  font-size:.9rem;
+}
+
+.umbrella{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:15px;
+}
+
+.umbrella .big{
+  font-size:1.45rem;
+  font-weight:900;
+}
+
+.pill{
+  display:inline-flex;
+  padding:6px 10px;
+  border-radius:999px;
+  font-size:.76rem;
+  font-weight:900;
+}
+
+.pill.yes{
+  background:#fee2e2;
+  color:#b91c1c;
+}
+
+.pill.maybe{
+  background:#fef3c7;
+  color:#a16207;
+}
+
+.pill.no{
+  background:#dcfce7;
+  color:#166534;
+}
+
+/* =========================
+   HOURLY
+========================= */
+
+.scroll-row{
+  display:flex;
+  gap:11px;
+  overflow-x:auto;
+  padding:3px 2px 9px;
+  scroll-snap-type:x proximity;
+}
+
+.scroll-row::-webkit-scrollbar{
+  height:7px;
+}
+
+.scroll-row::-webkit-scrollbar-thumb{
+  background:rgba(100,116,139,.25);
+  border-radius:20px;
+}
+
+.hour{
+  min-width:100px;
+  scroll-snap-align:start;
+  text-align:center;
+  padding:14px 10px;
+  border-radius:18px;
+  background:var(--surface);
+  border:1px solid var(--border);
+  box-shadow:0 8px 25px rgba(20,71,115,.06);
+}
+
+.hour.now{
+  border-color:rgba(14,165,233,.55);
+  background:rgba(14,165,233,.09);
+}
+
+.hour .ico{
+  font-size:1.8rem;
+  margin:5px 0;
+}
+
+.hour b{
+  font-size:1.05rem;
+}
+
+.hour small{
+  color:var(--muted);
+}
+
+/* =========================
+   DAILY
+========================= */
+
+.forecast-grid{
+  display:grid;
+  grid-template-columns:repeat(7,1fr);
+  gap:9px;
+}
+
+.day{
+  padding:15px 9px;
+  text-align:center;
+  border:1px solid var(--border);
+  background:var(--surface);
+  border-radius:18px;
+  transition:.2s;
+}
+
+.day:hover{
+  transform:translateY(-3px);
+  border-color:rgba(14,165,233,.35);
+}
+
+.day .ico{
+  font-size:1.8rem;
+  margin:7px 0;
+}
+
+.day small{
+  display:block;
+  color:var(--muted);
+}
+
+/* =========================
+   CHARTS
+========================= */
+
+.chart-card{
+  min-height:340px;
+}
+
+.chart-tabs{
+  display:flex;
+  gap:7px;
+  flex-wrap:wrap;
+  margin-bottom:10px;
+}
+
+.tab{
+  border:1px solid var(--border);
+  background:transparent;
+  color:var(--muted);
+  padding:8px 11px;
+  border-radius:10px;
+  font-weight:800;
+}
+
+.tab.active{
+  background:var(--primary);
+  color:#fff;
+  border-color:var(--primary);
+}
+
+.chart-wrap{
+  height:265px;
+  position:relative;
+}
+
+/* =========================
+   SUN MOON
+========================= */
+
+.sun-grid{
+  display:grid;
+  grid-template-columns:1fr 1.3fr 1fr;
+  align-items:center;
+  gap:15px;
+}
+
+.sun-side{
+  text-align:center;
+}
+
+.sun-side b{
+  font-size:1.15rem;
+}
+
+.sun-side span{
+  display:block;
+  color:var(--muted);
+  font-size:.8rem;
+}
+
+.sun-orbit{
+  width:min(240px,100%);
+  aspect-ratio:1;
+  margin:auto;
+  border-radius:50%;
+  border:2px dashed rgba(14,165,233,.28);
+  position:relative;
+}
+
+.sun-orbit:before{
+  content:"";
+  position:absolute;
+  inset:22%;
+  border-radius:50%;
+  background:
+    radial-gradient(
+      circle,
+      rgba(245,158,11,.55),
+      rgba(245,158,11,.08) 62%,
+      transparent 63%
+    );
+}
+
+.sun-dot{
+  position:absolute;
+  width:16px;
+  height:16px;
+  background:#f59e0b;
+  border-radius:50%;
+  top:8%;
+  left:50%;
+  transform:translateX(-50%);
+  box-shadow:0 0 25px #f59e0b;
+}
+
+.mini-grid{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:10px;
+}
+
+.mini{
+  padding:12px;
+  border:1px solid var(--border);
+  border-radius:15px;
+}
+
+.mini small{
+  color:var(--muted);
+  display:block;
+}
+
+/* =========================
+   AQI / UV
+========================= */
+
+.aqi-number{
+  font-size:3rem;
+  font-weight:900;
+  line-height:1;
+}
+
+.meter{
+  height:12px;
+  border-radius:999px;
+  background:
+    linear-gradient(
+      90deg,
+      #22c55e,
+      #facc15,
+      #f97316,
+      #ef4444,
+      #7c3aed
+    );
+  margin:14px 0;
+  position:relative;
+}
+
+.meter i{
+  position:absolute;
+  top:-5px;
+  width:22px;
+  height:22px;
+  border-radius:50%;
+  background:var(--surface-solid);
+  border:3px solid var(--text);
+  transform:translateX(-50%);
+}
+
+.uv .value{
+  font-size:2.3rem;
+  font-weight:900;
+}
+
+.uvbar{
+  height:12px;
+  background:
+    linear-gradient(
+      90deg,
+      #22c55e,
+      #facc15,
+      #f97316,
+      #ef4444,
+      #7c3aed
+    );
+  border-radius:20px;
+  position:relative;
+  margin-top:12px;
+}
+
+.uvbar i{
+  position:absolute;
+  top:-5px;
+  width:22px;
+  height:22px;
+  border-radius:50%;
+  background:var(--surface-solid);
+  border:3px solid var(--text);
+  transform:translateX(-50%);
+}
+
+/* =========================
+   WIND COMPASS
+========================= */
+
+.compass{
+  width:210px;
+  height:210px;
+  border-radius:50%;
+  border:1px solid var(--border);
+  margin:10px auto;
+  position:relative;
+  background:
+    radial-gradient(
+      circle,
+      rgba(14,165,233,.12),
+      transparent 60%
+    );
+}
+
+.dir{
+  position:absolute;
+  font-weight:900;
+  color:var(--muted);
+  transform:translate(-50%,-50%);
+}
+
+.n{left:50%;top:8%}
+.ne{left:80%;top:22%}
+.e{left:92%;top:50%}
+.se{left:80%;top:78%}
+.s{left:50%;top:92%}
+.sw{left:20%;top:78%}
+.w{left:8%;top:50%}
+.nw{left:20%;top:22%}
+
+.needle{
+  position:absolute;
+  left:50%;
+  top:50%;
+  width:4px;
+  height:72px;
+  background:var(--danger);
+  transform-origin:50% 100%;
+  transform:translate(-50%,-100%) rotate(45deg);
+  border-radius:5px;
+  box-shadow:0 0 12px rgba(239,68,68,.45);
+}
+
+.needle:after{
+  content:"";
+  position:absolute;
+  bottom:-7px;
+  left:50%;
+  width:14px;
+  height:14px;
+  border-radius:50%;
+  background:var(--text);
+  transform:translateX(-50%);
+}
+
+.wind-center{
+  position:absolute;
+  inset:0;
+  display:grid;
+  place-items:center;
+  font-weight:900;
+  text-align:center;
+}
+
+.wind-center span{
+  display:block;
+  color:var(--muted);
+  font-size:.78rem;
+}
+
+.wind-center small{
+  display:block;
+  color:var(--muted);
+}
+
+/* =========================
+   MAP
+========================= */
+
+.map-layout{
+  display:grid;
+  grid-template-columns:1.4fr .6fr;
+  gap:15px;
+}
+
+.map-box{
+  min-height:470px;
+  border-radius:22px;
+  overflow:hidden;
+  background:rgba(14,165,233,.06);
+  border:1px solid var(--border);
+  display:grid;
+  place-items:center;
+  padding:10px;
+}
+
+.map-box object{
+  width:100%;
+  height:450px;
+  max-width:550px;
+}
+
+.map-note{
+  font-size:.76rem;
+  color:var(--muted);
+  margin-top:7px;
+}
+
+.division-list{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:8px;
+}
+
+.division-btn{
+  text-align:left;
+  padding:11px;
+  border:1px solid var(--border);
+  background:var(--surface-solid);
+  color:var(--text);
+  border-radius:13px;
+  font-weight:800;
+}
+
+.division-btn.active{
+  border-color:var(--primary);
+  background:rgba(14,165,233,.10);
+  color:var(--primary);
+}
+
+.map-detail{
+  margin-top:13px;
+  padding:14px;
+  border-radius:15px;
+  background:rgba(14,165,233,.08);
+}
+
+/* =========================
+   RADAR
+========================= */
+
+.radar{
+  position:relative;
+  height:310px;
+  border-radius:22px;
+  overflow:hidden;
+  background:
+    radial-gradient(
+      circle,
+      #8bf 0 5%,
+      transparent 6% 17%,
+      rgba(34,197,94,.35) 18% 27%,
+      transparent 28% 37%,
+      rgba(250,204,21,.28) 38% 45%,
+      transparent 46%
+    ),
+    #0a2032;
+}
+
+.radar:before{
+  content:"";
+  position:absolute;
+  inset:0;
+  background:
+    repeating-radial-gradient(
+      circle at 50% 50%,
+      transparent 0 36px,
+      rgba(255,255,255,.13) 37px 38px
+    );
+}
+
+.radar-sweep{
+  position:absolute;
+  width:50%;
+  height:2px;
+  background:linear-gradient(
+    90deg,
+    transparent,
+    #9ff
+  );
+  left:50%;
+  top:50%;
+  transform-origin:left center;
+  animation:sweep 4s linear infinite;
+}
+
+.radar-label{
+  position:absolute;
+  top:12px;
+  left:12px;
+  background:rgba(0,0,0,.35);
+  color:#fff;
+  padding:6px 9px;
+  border-radius:9px;
+  font-size:.75rem;
+  font-weight:900;
+}
+
+.range{
+  width:100%;
+}
+
+/* =========================
+   TRAVEL
+========================= */
+
+.route{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  overflow-x:auto;
+  padding:5px 0;
+}
+
+.route-stop{
+  min-width:150px;
+  padding:15px;
+  border:1px solid var(--border);
+  border-radius:17px;
+  background:var(--surface-solid);
+}
+
+.arrow{
+  font-size:1.4rem;
+  color:var(--muted);
+}
+
+.score{
+  font-size:2.8rem;
+  font-weight:900;
+  color:var(--primary);
+}
+
+.progress{
+  height:9px;
+  background:rgba(100,116,139,.18);
+  border-radius:99px;
+  overflow:hidden;
+}
+
+.progress i{
+  display:block;
+  height:100%;
+  background:
+    linear-gradient(
+      90deg,
+      var(--primary),
+      var(--primary2)
+    );
+  border-radius:99px;
+}
+
+/* =========================
+   PLACES / ACTIVITIES
+========================= */
+
+.places{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:10px;
+}
+
+.place{
+  padding:15px;
+  border:1px solid var(--border);
+  border-radius:17px;
+  background:var(--surface);
+}
+
+.place b{
+  display:block;
+}
+
+.place span{
+  color:var(--primary);
+  font-weight:900;
+}
+
+.activity-grid{
+  display:grid;
+  grid-template-columns:repeat(6,1fr);
+  gap:10px;
+}
+
+.activity{
+  padding:15px;
+  border:1px solid var(--border);
+  border-radius:17px;
+  background:var(--surface);
+  text-align:center;
+}
+
+.activity .emoji{
+  font-size:1.8rem;
+}
+
+.activity small{
+  display:block;
+  color:var(--muted);
+  margin-top:4px;
+}
+
+/* =========================
+   ASSISTANT
+========================= */
+
+.assistant{
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+
+.messages{
+  min-height:180px;
+  max-height:270px;
+  overflow:auto;
+  padding:5px;
+}
+
+.bubble{
+  max-width:84%;
+  padding:11px 14px;
+  border-radius:16px;
+  margin:7px 0;
+  background:rgba(14,165,233,.09);
+}
+
+.bubble.user{
+  margin-left:auto;
+  background:
+    linear-gradient(
+      135deg,
+      var(--primary),
+      var(--primary2)
+    );
+  color:#fff;
+}
+
+.assistant-row{
+  display:flex;
+  gap:8px;
+}
+
+.assistant-row input{
+  flex:1;
+  border:1px solid var(--border);
+  background:var(--surface-solid);
+  color:var(--text);
+  border-radius:13px;
+  padding:12px;
+  outline:none;
+}
+
+/* =========================
+   NOTIFICATIONS
+========================= */
+
+.notification-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+}
+
+.check{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:12px;
+  border:1px solid var(--border);
+  border-radius:14px;
+}
+
+.switch{
+  position:relative;
+  width:46px;
+  height:26px;
+}
+
+.switch input{
+  display:none;
+}
+
+.slider{
+  position:absolute;
+  inset:0;
+  background:#94a3b8;
+  border-radius:30px;
+  transition:.2s;
+}
+
+.slider:before{
+  content:"";
+  position:absolute;
+  width:20px;
+  height:20px;
+  left:3px;
+  top:3px;
+  background:#fff;
+  border-radius:50%;
+  transition:.2s;
+}
+
+.switch input:checked+.slider{
+  background:var(--primary);
+}
+
+.switch input:checked+.slider:before{
+  transform:translateX(20px);
+}
+
+/* =========================
+   FOOTER
+========================= */
+
+footer{
+  border-top:1px solid var(--border);
+  padding:28px 0;
+  color:var(--muted);
+  font-size:.85rem;
+}
+
+.footer-grid{
+  display:flex;
+  justify-content:space-between;
+  gap:20px;
+  flex-wrap:wrap;
+}
+
+/* =========================
+   LOADER / TOAST
+========================= */
+
+.toast{
+  position:fixed;
+  right:16px;
+  bottom:16px;
+  z-index:1000;
+  padding:13px 16px;
+  border-radius:14px;
+  background:#10243e;
+  color:#fff;
+  box-shadow:var(--shadow);
+  transform:translateY(120px);
+  transition:.25s;
+}
+
+.toast.show{
+  transform:none;
+}
+
+.loader{
+  display:none;
+  position:fixed;
+  inset:0;
+  background:rgba(7,21,33,.35);
+  backdrop-filter:blur(5px);
+  z-index:900;
+  place-items:center;
+}
+
+.loader.show{
+  display:grid;
+}
+
+.spinner{
+  width:54px;
+  height:54px;
+  border:5px solid rgba(255,255,255,.35);
+  border-top-color:#fff;
+  border-radius:50%;
+  animation:spin 1s linear infinite;
+}
+
+/* =========================
+   ANIMATIONS
+========================= */
+
+@keyframes float{
+  50%{
+    transform:translateY(-8px);
+  }
+}
+
+@keyframes drift{
+  to{
+    transform:translateX(120vw);
+  }
+}
+
+@keyframes rain{
+  to{
+    background-position:22px 34px;
+  }
+}
+
+@keyframes sweep{
+  to{
+    transform:rotate(360deg);
+  }
+}
+
+@keyframes spin{
+  to{
+    transform:rotate(360deg);
+  }
+}
+
+/* =========================
+   RESPONSIVE
+========================= */
+
+@media(max-width:900px){
+
+  .metrics{
+    grid-template-columns:repeat(3,1fr);
+  }
+
+  .forecast-grid{
+    grid-template-columns:repeat(4,1fr);
+  }
+
+  .map-layout,
+  .grid2{
+    grid-template-columns:1fr;
+  }
+
+  .places{
+    grid-template-columns:repeat(2,1fr);
+  }
+
+  .activity-grid{
+    grid-template-columns:repeat(3,1fr);
+  }
+}
+
+@media(max-width:700px){
+
+  .nav{
+    height:64px;
+  }
+
+  .navlinks{
+    display:none;
+    position:absolute;
+    top:64px;
+    left:14px;
+    right:14px;
+    background:var(--surface-solid);
+    border:1px solid var(--border);
+    padding:8px;
+    border-radius:16px;
+    box-shadow:var(--shadow);
+    flex-direction:column;
+  }
+
+  .navlinks.open{
+    display:flex;
+  }
+
+  .navlinks a{
+    padding:12px;
+  }
+
+  .hamb{
+    display:grid;
+  }
+
+  .search-row{
+    grid-template-columns:1fr;
+  }
+
+  .filters{
+    grid-template-columns:1fr;
+  }
+
+  .weather-card{
+    padding:23px;
+  }
+
+  .weather-top{
+    align-items:center;
+  }
+
+  .weather-icon{
+    font-size:4rem;
+  }
+
+  .metrics{
+    grid-template-columns:repeat(2,1fr);
+  }
+
+  .forecast-grid{
+    grid-template-columns:repeat(2,1fr);
+  }
+
+  .sun-grid{
+    grid-template-columns:1fr;
+  }
+
+  .sun-orbit{
+    max-width:190px;
+  }
+
+  .notification-grid{
+    grid-template-columns:1fr;
+  }
+
+  .places{
+    grid-template-columns:1fr 1fr;
+  }
+
+  .activity-grid{
+    grid-template-columns:repeat(2,1fr);
+  }
+
+  .map-box{
+    min-height:370px;
+  }
+
+  .map-box object{
+    height:350px;
+  }
+}
+
+@media(max-width:430px){
+
+  .container{
+    width:min(100% - 18px,1180px);
+  }
+
+  .card{
+    padding:16px;
+  }
+
+  .weather-card{
+    border-radius:23px;
+  }
+
+  .location{
+    font-size:1.25rem;
+  }
+
+  .temp{
+    font-size:4.5rem;
+  }
+
+  .weather-icon{
+    font-size:3.4rem;
+  }
+
+  .metrics{
+    gap:7px;
+  }
+
+  .metric{
+    padding:10px;
+  }
+
+  .places{
+    grid-template-columns:1fr;
+  }
+
+  .search-panel{
+    padding:14px;
+  }
+}
+
+@media(prefers-reduced-motion:reduce){
+
+  *,
+  *::before,
+  *::after{
+    animation-duration:.001ms!important;
+    animation-iteration-count:1!important;
+    scroll-behavior:auto!important;
+    transition:none!important;
+  }
+}
+</style>
+</head>
+
+<body>
+
+<div class="app">
+
+<!-- ========================= HEADER ========================= -->
+
+<header class="topbar">
+
+  <div class="container nav">
+
+    <a class="brand" href="#home">
+      🌦️ <span>WeatherBD</span> 🇧🇩
+    </a>
+
+    <nav
+      class="navlinks"
+      id="navLinks"
+      aria-label="Main navigation"
+    >
+      <a href="#home" class="active">Home</a>
+      <a href="#forecast">Forecast</a>
+      <a href="#map">Map</a>
+      <a href="#radar">Radar</a>
+      <a href="#air">Air Quality</a>
+      <a href="#analytics">Analytics</a>
+      <a href="#about">About</a>
+    </nav>
+
+    <button
+      class="iconbtn"
+      id="themeBtn"
+      aria-label="থিম পরিবর্তন"
+    >
+      ☀️
+    </button>
+
+    <button
+      class="iconbtn hamb"
+      id="hamb"
+      aria-label="মেনু খুলুন"
+    >
+      ☰
+    </button>
+
+  </div>
+
+</header>
+
+
+<main id="home">
+
+<div class="container">
+
+<!-- ========================= SEARCH ========================= -->
+
+<section class="hero">
+
+  <div class="search-panel">
+
+    <div class="search-row">
+
+      <div class="searchbox">
+
+        <span class="searchicon">🔍</span>
+
+        <input
+          id="searchInput"
+          autocomplete="off"
+          placeholder="আপনার শহর বা জেলার নাম লিখুন"
+          aria-label="শহর বা জেলার নাম"
+        >
+
+        <div
+          class="search-results"
+          id="searchResults"
+        ></div>
+
+      </div>
+
+      <button
+        class="btn primary"
+        id="searchBtn"
+      >
+        Search
+      </button>
+
+      <button
+        class="btn secondary"
+        id="locBtn"
+      >
+        📍 আমার অবস্থান
+      </button>
+
+    </div>
+
+
+    <div class="filters">
+
+      <select
+        id="divisionSelect"
+        aria-label="বিভাগ নির্বাচন"
+      >
+        <option value="">
+          বিভাগ নির্বাচন করুন
+        </option>
+      </select>
+
+      <select
+        id="districtSelect"
+        aria-label="জেলা নির্বাচন"
+      >
+        <option value="">
+          জেলা নির্বাচন করুন
+        </option>
+      </select>
+
+    </div>
+
+
+    <div
+      class="status"
+      id="status"
+    >
+      আপনার শহর বেছে নিন।
+      <span class="demo">
+        Demo Data
+      </span>
+    </div>
+
+  </div>
+
+
+<!-- ========================= WEATHER CARD ========================= -->
+
+<article
+  class="weather-card"
+  id="weatherCard"
+  aria-live="polite"
+>
+
+  <div class="weather-decoration">
+
+    <span class="cloud c1"></span>
+    <span class="cloud c2"></span>
+    <span class="cloud c3"></span>
+
+    <div
+      class="rain-particles"
+      id="rainParticles"
+    ></div>
+
+  </div>
+
+
+  <div class="weather-content">
+
+    <div class="weather-top">
+
+      <div>
+
+        <div
+          class="location"
+          id="cityName"
+        >
+          খুলনা, বাংলাদেশ
+        </div>
+
+        <div
+          class="country"
+          id="coords"
+        >
+          Khulna Division · Bangladesh
+        </div>
+
+      </div>
+
+
+      <div
+        class="weather-icon"
+        id="weatherIcon"
+      >
+        🌧️
+      </div>
+
+    </div>
+
+
+    <div class="temp">
+      <span id="temp">27</span>°C
+    </div>
+
+    <div
+      class="condition"
+      id="condition"
+    >
+      Light Rain
+    </div>
+
+    <div class="feels">
+      Feels like
+      <b id="feels">30</b>°C
+    </div>
+
+
+    <div class="metrics">
+
+      <div class="metric">
+        <small>💧 Humidity</small>
+        <b id="humidity">82%</b>
+      </div>
+
+      <div class="metric">
+        <small>💨 Wind</small>
+        <b id="wind">14 km/h</b>
+      </div>
+
+      <div class="metric">
+        <small>🎚️ Pressure</small>
+        <b id="pressure">1012 hPa</b>
+      </div>
+
+      <div class="metric">
+        <small>👁️ Visibility</small>
+        <b id="visibility">8 km</b>
+      </div>
+
+      <div class="metric">
+        <small>☀️ UV Index</small>
+        <b id="uv">3</b>
+      </div>
+
+      <div class="metric">
+        <small>🌧️ Rain chance</small>
+        <b id="rainChance">70%</b>
+      </div>
+
+    </div>
+
+  </div>
+
+</article>
+
+</section>
+
+
+<!-- ========================= ADVICE ========================= -->
+
+<section class="section grid2">
+
+  <div class="card">
+
+    <div class="section-head">
+      <div>
+        <h2>🧠 Smart Weather Advice</h2>
+        <p>
+          আজকের আবহাওয়া দেখে সহজ পরামর্শ
+        </p>
+      </div>
+    </div>
+
+    <div class="advice">
+
+      <div
+        class="advice-icon"
+        id="adviceIcon"
+      >
+        ☂️
+      </div>
+
+      <div>
+
+        <b id="adviceTitle">
+          আজ umbrella সঙ্গে রাখুন।
+        </b>
+
+        <span id="adviceText">
+          বৃষ্টির সম্ভাবনা বেশি।
+        </span>
+
+      </div>
+
+    </div>
+
+  </div>
+
+
+  <div class="card umbrella">
+
+    <div>
+
+      <div class="section-head">
+        <div>
+          <h2>
+            ☂️ Should I take an umbrella?
+          </h2>
+
+          <p>
+            বৃষ্টির সম্ভাবনা অনুযায়ী
+          </p>
+        </div>
+      </div>
+
+      <div
+        class="big"
+        id="umbrellaText"
+      >
+        YES ☂️
+      </div>
+
+    </div>
+
+    <span
+      class="pill yes"
+      id="umbrellaPill"
+    >
+      70% rain
+    </span>
+
+  </div>
+
+</section>
+
+
+<!-- ========================= HOURLY ========================= -->
+
+<section
+  class="section"
+  id="forecast"
+>
+
+  <div class="section-head">
+
+    <div>
+
+      <h2>
+        ⏱️ আগামী ২৪ ঘণ্টা
+      </h2>
+
+      <p>
+        প্রতি ঘণ্টার তাপমাত্রা ও বৃষ্টির সম্ভাবনা
+      </p>
+
+    </div>
+
+  </div>
+
+  <div
+    class="scroll-row"
+    id="hourlyRow"
+  ></div>
+
+</section>
+
+
+<!-- ========================= DAILY ========================= -->
+
+<section class="section">
+
+  <div class="section-head">
+
+    <div>
+
+      <h2>
+        📅 ৭ দিনের পূর্বাভাস
+      </h2>
+
+      <p>
+        সর্বোচ্চ ও সর্বনিম্ন তাপমাত্রা
+      </p>
+
+    </div>
+
+  </div>
+
+  <div
+    class="forecast-grid"
+    id="dailyGrid"
+  ></div>
+
+</section>
+
+
+<!-- ========================= CHART + SUN ========================= -->
+
+<section class="section grid2">
+
+  <div class="card chart-card">
+
+    <div class="section-head">
+
+      <div>
+
+        <h2>
+          📈 Temperature Chart
+        </h2>
+
+        <p>
+          আজকের ঘণ্টাভিত্তিক trend
+        </p>
+
+      </div>
+
+    </div>
+
+
+    <div
+      class="chart-tabs"
+      data-chart="main"
+    >
+
+      <button
+        class="tab active"
+        data-metric="temp"
+      >
+        Temperature
+      </button>
+
+      <button
+        class="tab"
+        data-metric="feels"
+      >
+        Feels Like
+      </button>
+
+      <button
+        class="tab"
+        data-metric="humidity"
+      >
+        Humidity
+      </button>
+
+      <button
+        class="tab"
+        data-metric="rain"
+      >
+        Rain Probability
+      </button>
+
+    </div>
+
+
+    <div class="chart-wrap">
+      <canvas id="mainChart"></canvas>
+    </div>
+
+  </div>
+
+
+  <div class="card">
+
+    <div class="section-head">
+
+      <div>
+
+        <h2>
+          ☀️ Sun & Moon
+        </h2>
+
+        <p>
+          আজকের সূর্য ও চাঁদের সময়
+        </p>
+
+      </div>
+
+    </div>
+
+
+    <div class="sun-grid">
+
+      <div class="sun-side">
+
+        <b id="sunrise">
+          5:42 AM
+        </b>
+
+        <span>
+          🌅 Sunrise
+        </span>
+
+      </div>
+
+
+      <div class="sun-orbit">
+        <span class="sun-dot"></span>
+      </div>
+
+
+      <div class="sun-side">
+
+        <b id="sunset">
+          6:03 PM
+        </b>
+
+        <span>
+          🌇 Sunset
+        </span>
+
+      </div>
+
+    </div>
+
+
+    <div
+      class="mini-grid"
+      style="margin-top:14px"
+    >
+
+      <div class="mini">
+        <small>Day Length</small>
+        <b id="dayLength">
+          12h 21m
+        </b>
+      </div>
+
+      <div class="mini">
+        <small>Moonrise</small>
+        <b id="moonrise">
+          8:14 PM
+        </b>
+      </div>
+
+      <div class="mini">
+        <small>Moon Phase</small>
+        <b id="moonPhase">
+          Waxing
+        </b>
+      </div>
+
+    </div>
+
+  </div>
+
+</section>
+
+
+<!-- ========================= AIR + UV ========================= -->
+
+<section
+  class="section grid2"
+  id="air"
+>
+
+  <div class="card">
+
+    <div class="section-head">
+
+      <div>
+
+        <h2>
+          🌬️ Air Quality
+        </h2>
+
+        <p>
+          বাতাসের মানের সহজ ধারণা
+        </p>
+
+      </div>
+
+    </div>
+
+
+    <div
+      class="aqi-number"
+      id="aqi"
+    >
+      52
+    </div>
+
+    <b id="aqiLabel">
+      Moderate
+    </b>
+
+    <div class="meter">
+      <i
+        id="aqiPin"
+        style="left:21%"
+      ></i>
+    </div>
+
+    <p
+      id="aqiText"
+      style="color:var(--muted)"
+    >
+      বাতাসের মান মোটামুটি ভালো,
+      তবে sensitive people-এর জন্য
+      সতর্ক থাকা ভালো।
+    </p>
+
+
+    <div class="mini-grid">
+
+      <div class="mini">
+        <small>PM2.5</small>
+        <b id="pm25">
+          18 μg/m³
+        </b>
+      </div>
+
+      <div class="mini">
+        <small>PM10</small>
+        <b id="pm10">
+          34 μg/m³
+        </b>
+      </div>
+
+      <div class="mini">
+        <small>NO₂</small>
+        <b id="no2">
+          22 μg/m³
+        </b>
+      </div>
+
+    </div>
+
+  </div>
+
+
+  <div class="card uv">
+
+    <div class="section-head">
+
+      <div>
+
+        <h2>
+          ☀️ UV Index
+        </h2>
+
+        <p>
+          সূর্যের UV মাত্রা
+        </p>
+
+      </div>
+
+    </div>
+
+
+    <div class="value">
+
+      <span id="uvBig">
+        3
+      </span>
+
+      ·
+
+      <span id="uvLabel">
+        Moderate
+      </span>
+
+    </div>
+
+
+    <div class="uvbar">
+      <i
+        id="uvPin"
+        style="left:25%"
+      ></i>
+    </div>
+
+
+    <p
+      id="uvText"
+      style="color:var(--muted)"
+    >
+      UV মাঝারি। দীর্ঘ সময় বাইরে থাকলে
+      সাধারণ sun protection ব্যবহার করা ভালো।
+    </p>
+
+  </div>
+
+</section>
+
+
+<!-- ========================= WIND ========================= -->
+
+<section class="section grid2">
+
+  <div class="card">
+
+    <div class="section-head">
+
+      <div>
+
+        <h2>
+          🧭 Wind Compass
+        </h2>
+
+        <p>
+          বাতাস কোন দিক থেকে আসছে
+        </p>
+
+      </div>
+
+    </div>
+
+
+    <div class="compass">
+
+      <span class="dir n">N</span>
+      <span class="dir ne">NE</span>
+      <span class="dir e">E</span>
+      <span class="dir se">SE</span>
+      <span class="dir s">S</span>
+      <span class="dir sw">SW</span>
+      <span class="dir w">W</span>
+      <span class="dir nw">NW</span>
+
+      <div
+        class="needle"
+        id="needle"
+      ></div>
+
+      <div class="wind-center">
+
+        <div>
+
+          <span>
+            Wind
+          </span>
+
+          <strong id="windCompass">
+            14 km/h
+          </strong>
+
+          <small id="windDir">
+            NE
+          </small>
+
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+
+  <div class="card">
+
+    <div class="section-head">
+
+      <div>
+
+        <h2>
+          📊 Quick Stats
+        </h2>
+
+        <p>
+          এই মুহূর্তের গুরুত্বপূর্ণ তথ্য
+        </p>
+
+      </div>
+
+    </div>
+
+
+    <div class="mini-grid">
+
+      <div class="mini">
+        <small>Feels Like</small>
+        <b id="statFeels">
+          30°C
+        </b>
+      </div>
+
+      <div class="mini">
+        <small>Humidity</small>
+        <b id="statHumidity">
+          82%
+        </b>
+      </div>
+
+      <div class="mini">
+        <small>Pressure</small>
+        <b id="statPressure">
+          1012 hPa
+        </b>
+      </div>
+
+    </div>
+
+
+    <div
+      class="mini-grid"
+      style="margin-top:10px"
+    >
+
+      <div class="mini">
+        <small>Visibility</small>
+        <b id="statVisibility">
+          8 km
+        </b>
+      </div>
+
+      <div class="mini">
+        <small>Rain</small>
+        <b id="statRain">
+          70%
+        </b>
+      </div>
+
+      <div class="mini">
+        <small>Data</small>
+        <b id="dataMode">
+          Demo
+        </b>
+      </div>
+
+    </div>
+
+  </div>
+
+</section>
+
+
+<!-- ========================= BANGLADESH MAP ========================= -->
+
+<section
+  class="section"
+  id="map"
+>
+
+  <div class="section-head">
+
+    <div>
+
+      <h2>
+        🇧🇩 Bangladesh Weather Map
+      </h2>
+
+      <p>
+        বাস্তব geographic SVG map + division selection
+      </p>
+
+    </div>
+
+  </div>
+
+
+  <div class="card map-layout">
+
+    <div>
+
+      <div class="map-box">
+
+        <!--
+          Real geographic Bangladesh SVG.
+          Wikimedia Commons source.
+          No fake CSS polygons are used.
+        -->
+
+        <object
+          aria-label="বাংলাদেশের বাস্তব geographic SVG map"
+          data="https://upload.wikimedia.org/wikipedia/commons/c/c8/Bangladesh_regions_map.svg"
+          type="image/svg+xml"
+        >
+          বাংলাদেশের geographic SVG map
+          লোড হয়নি।
+        </object>
+
+      </div>
+
+
+      <div class="map-note">
+        Map source: Wikimedia Commons-এর
+        Bangladesh regions SVG।
+        Weather values selected division-এর
+        data থেকে দেখানো হয়।
+      </div>
+
+    </div>
+
+
+    <div>
+
+      <h3>
+        বিভাগ নির্বাচন
+      </h3>
+
+      <div
+        class="division-list"
+        id="divisionList"
+      ></div>
+
+      <div
+        class="map-detail"
+        id="mapDetail"
+      >
+        <b>খুলনা</b>
+        <br>
+        🌧️ 27°C · Rain: 70%
+      </div>
+
+    </div>
+
+  </div>
+
+</section>
+
+
+<!-- ========================= RADAR ========================= -->
+
+<section
+  class="section"
+  id="radar"
+>
+
+  <div class="section-head">
+
+    <div>
+
+      <h2>
+        🌧️ Rain Radar
+      </h2>
+
+      <p>
+        এটি demo visualization — real radar নয়
+      </p>
+
+    </div>
+
+    <span class="demo">
+      Radar Demo
+    </span>
+
+  </div>
+
+
+  <div class="card">
+
+    <div class="radar">
+
+      <span
+        class="radar-label"
+        id="radarLabel"
+      >
+        Now · Radar Demo
+      </span>
+
+      <div class="radar-sweep"></div>
+
+    </div>
+
+
+    <input
+      class="range"
+      id="radarSlider"
+      type="range"
+      min="0"
+      max="3"
+      value="0"
+      aria-label="রাডার সময়"
+    >
+
+    <div
+      style="
+        display:flex;
+        justify-content:space-between;
+        color:var(--muted);
+        font-size:.8rem
+      "
+    >
+      <span>Now</span>
+      <span>+1 Hour</span>
+      <span>+2 Hours</span>
+      <span>+3 Hours</span>
+    </div>
+
+  </div>
+
+</section>
+
+
+<!-- ========================= ALERTS ========================= -->
+
+<section class="section">
+
+  <div class="section-head">
+
+    <div>
+
+      <h2>
+        ⚠️ Weather Alerts
+      </h2>
+
+      <p>
+        গুরুতর সতর্কতা থাকলে এখানে দেখাবে
+      </p>
+
+    </div>
+
+  </div>
+
+
+  <div class="card">
+
+    <div
+      class="alerts-empty"
+      id="alertsBox"
+    >
+      ✅ No major weather alerts.
+      <span
+        style="
+          font-weight:500;
+          color:var(--muted)
+        "
+      >
+        Demo mode-এ live warning দাবি করা হচ্ছে না।
+      </span>
+    </div>
+
+  </div>
+
+</section>
+
+
+<!-- ========================= TRAVEL ========================= -->
+
+<section class="section">
+
+  <div class="section-head">
+
+    <div>
+
+      <h2>
+        🚗 Travel Weather
+      </h2>
+
+      <p>
+        দুই জায়গার আবহাওয়া তুলনা করুন
+      </p>
+
+    </div>
+
+  </div>
+
+
+  <div class="card">
+
+    <div class="filters">
+
+      <select id="fromSelect"></select>
+
+      <select id="toSelect"></select>
+
+    </div>
+
+
+    <div
+      class="route"
+      id="route"
+    ></div>
+
+
+    <div
+      style="
+        display:flex;
+        align-items:center;
+        gap:18px;
+        margin-top:10px
+      "
+    >
+
+      <div>
+
+        <small style="color:var(--muted)">
+          Travel Weather Score
+        </small>
+
+        <div
+          class="score"
+          id="travelScore"
+        >
+          78/100
+        </div>
+
+      </div>
+
+      <div style="flex:1">
+
+        <div class="progress">
+          <i
+            id="travelProgress"
+            style="width:78%"
+          ></i>
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+</section>
+
+
+<!-- ========================= BEST PLACES ========================= -->
+
+<section class="section">
+
+  <div class="section-head">
+
+    <div>
+
+      <h2>
+        🏆 Best Places to Visit Today
+      </h2>
+
+      <p>
+        শুধু আবহাওয়াভিত্তিক fun recommendation —
+        definitive travel recommendation নয়
+      </p>
+
+    </div>
+
+  </div>
+
+
+  <div
+    class="places"
+    id="places"
+  ></div>
+
+</section>
+
+
+<!-- ========================= ACTIVITIES ========================= -->
+
+<section class="section">
+
+  <div class="section-head">
+
+    <div>
+
+      <h2>
+        🏃 Outdoor Activities
+      </h2>
+
+      <p>
+        আজকের আবহাওয়া অনুযায়ী
+      </p>
+
+    </div>
+
+  </div>
+
+
+  <div
+    class="activity-grid"
+    id="activities"
+  ></div>
+
+</section>
+
+
+<!-- ========================= ANALYTICS ========================= -->
+
+<section
+  class="section grid2"
+  id="analytics"
+>
+
+  <div class="card chart-card">
+
+    <div class="section-head">
+
+      <div>
+
+        <h2>
+          📊 Weather History
+        </h2>
+
+        <p>
+          Demo mode-এ নমুনা history
+        </p>
+
+      </div>
+
+    </div>
+
+
+    <div class="chart-tabs">
+
+      <button
+        class="tab active history-tab"
+        data-history="today"
+      >
+        Today
+      </button>
+
+      <button
+        class="tab history-tab"
+        data-history="yesterday"
+      >
+        Yesterday
+      </button>
+
+      <button
+        class="tab history-tab"
+        data-history="7days"
+      >
+        Last 7 Days
+      </button>
+
+    </div>
+
+
+    <div class="chart-wrap">
+      <canvas id="historyChart"></canvas>
+    </div>
+
+  </div>
+
+
+  <div class="card chart-card">
+
+    <div class="section-head">
+
+      <div>
+
+        <h2>
+          📈 Advanced Analytics
+        </h2>
+
+        <p>
+          Temperature, humidity, rain ও wind trend
+        </p>
+
+      </div>
+
+    </div>
+
+
+    <div class="chart-tabs">
+
+      <button
+        class="tab active analytics-tab"
+        data-range="24"
+      >
+        24 Hours
+      </button>
+
+      <button
+        class="tab analytics-tab"
+        data-range="7"
+      >
+        7 Days
+      </button>
+
+    </div>
+
+
+    <div class="chart-wrap">
+      <canvas id="analyticsChart"></canvas>
+    </div>
+
+  </div>
+
+</section>
+
+
+<!-- ========================= ASSISTANT + NOTIFICATIONS ========================= -->
+
+<section class="section grid2">
+
+  <div class="card assistant">
+
+    <div class="section-head">
+
+      <div>
+
+        <h2>
+          🤖 Smart Weather Assistant
+        </h2>
+
+        <p>
+          Rule-based assistant — AI model নয়
+        </p>
+
+      </div>
+
+    </div>
+
+
+    <div
+      class="messages"
+      id="messages"
+    >
+
+      <div class="bubble">
+        আপনার প্রশ্ন করুন—
+        যেমন “কাল কি বৃষ্টি হবে?”
+      </div>
+
+    </div>
+
+
+    <div class="assistant-row">
+
+      <input
+        id="assistantInput"
+        placeholder="যেমন: আজ umbrella লাগবে?"
+        aria-label="Weather Assistant প্রশ্ন"
+      >
+
+      <button
+        class="btn primary"
+        id="askBtn"
+      >
+        Ask
+      </button>
+
+    </div>
+
+  </div>
+
+
+  <div class="card">
+
+    <div class="section-head">
+
+      <div>
+
+        <h2>
+          🔔 Notification Preferences
+        </h2>
+
+        <p>
+          Browser notification permission থাকলে
+          alert ব্যবহার করা যাবে
+        </p>
+
+      </div>
+
+    </div>
+
+
+    <div class="notification-grid">
+
+      <label class="check">
+        ☔ Rain alert
+
+        <span class="switch">
+          <input
+            type="checkbox"
+            class="notify"
+            data-type="rain"
+          >
+          <i class="slider"></i>
+        </span>
+      </label>
+
+
+      <label class="check">
+        🔥 High temperature
+
+        <span class="switch">
+          <input
+            type="checkbox"
+            class="notify"
+            data-type="heat"
+          >
+          <i class="slider"></i>
+        </span>
+      </label>
+
+
+      <label class="check">
+        🌪️ Severe weather
+
+        <span class="switch">
+          <input
+            type="checkbox"
+            class="notify"
+            data-type="severe"
+          >
+          <i class="slider"></i>
+        </span>
+      </label>
+
+
+      <label class="check">
+        🌫️ Air quality
+
+        <span class="switch">
+          <input
+            type="checkbox"
+            class="notify"
+            data-type="air"
+          >
+          <i class="slider"></i>
+        </span>
+      </label>
+
+    </div>
+
+
+    <button
+      class="btn secondary"
+      id="notifyBtn"
+      style="width:100%;margin-top:12px"
+    >
+      🔔 Notification Permission
+    </button>
+
+
+    <p
+      style="
+        color:var(--muted);
+        font-size:.8rem
+      "
+    >
+      Permission না দিলে browser notification
+      পাঠানো হবে না।
+    </p>
+
+  </div>
+
+</section>
+
+</div>
+</main>
+
+
+<!-- ========================= FOOTER ========================= -->
+
+<footer id="about">
+
+  <div class="container footer-grid">
+
+    <div>
+
+      <b>
+        🌦️ WeatherBD 🇧🇩
+      </b>
+
+      <br>
+
+      বাংলাদেশের আবহাওয়া, এক নজরে।
+
+      <br>
+
+      <span>
+        Weather data is provided by
+        third-party weather services.
+      </span>
+
+      <br>
+
+      <span>
+        Weather information may not always
+        be perfectly accurate.
+      </span>
+
+    </div>
+
+
+    <div>
+
+      <a href="#home">Home</a>
+      ·
+      <a href="#forecast">Forecast</a>
+      ·
+      <a href="#map">Map</a>
+      ·
+      <a href="#radar">Radar</a>
+      ·
+      <a href="#about">About</a>
+
+    </div>
+
+  </div>
+
+</footer>
+
+</div>
+
+
+<div
+  class="loader"
+  id="loader"
+>
+  <div
+    class="spinner"
+    aria-label="Loading"
+  ></div>
+</div>
+
+
+<div
+  class="toast"
+  id="toast"
+></div>
+
+
+<script>
+"use strict";
+
+/* =========================================================
+   WEATHERBD CONFIGURATION
+=========================================================
+
+   DEMO_MODE = true
+   ----------------
+   Website realistic demo data দিয়ে চলবে।
+
+   DEMO_MODE = false
+   -----------------
+   Open-Meteo live data ব্যবহার করবে।
+
+   Open-Meteo সাধারণ weather usage-এর জন্য
+   API key ছাড়াই কাজ করতে পারে।
+
+   অন্য provider ব্যবহার করলে এখানে key রাখতে পারবেন।
+   Production website-এ secret API key সরাসরি browser-এ
+   না রেখে backend/proxy ব্যবহার করা ভালো.
+========================================================= */
+
+const DEMO_MODE = true;
+
+const CONFIG = {
+  API_KEY: "YOUR_API_KEY_HERE",
+  API_PROVIDER: "Open-Meteo"
+};
+
+
+/* =========================================================
+   BANGLADESH DIVISIONS + DISTRICTS
+========================================================= */
+
+const DIVISIONS = {
+
+  Dhaka:{
+    bn:"ঢাকা",
+    lat:23.8103,
+    lon:90.4125,
+    districts:[
+      "Dhaka",
+      "Faridpur",
+      "Gazipur",
+      "Gopalganj",
+      "Kishoreganj",
+      "Madaripur",
+      "Manikganj",
+      "Munshiganj",
+      "Narayanganj",
+      "Narsingdi",
+      "Rajbari",
+      "Shariatpur",
+      "Tangail"
+    ]
+  },
+
+  Chattogram:{
+    bn:"চট্টগ্রাম",
+    lat:22.3569,
+    lon:91.7832,
+    districts:[
+      "Bandarban",
+      "Brahmanbaria",
+      "Chandpur",
+      "Chattogram",
+      "Cumilla",
+      "Cox's Bazar",
+      "Feni",
+      "Khagrachhari",
+      "Lakshmipur",
+      "Noakhali",
+      "Rangamati"
+    ]
+  },
+
+  Rajshahi:{
+    bn:"রাজশাহী",
+    lat:24.3636,
+    lon:88.6241,
+    districts:[
+      "Bogura",
+      "Chapainawabganj",
+      "Joypurhat",
+      "Naogaon",
+      "Natore",
+      "Pabna",
+      "Rajshahi",
+      "Sirajganj"
+    ]
+  },
+
+  Khulna:{
+    bn:"খুলনা",
+    lat:22.8456,
+    lon:89.5403,
+    districts:[
+      "Bagerhat",
+      "Chuadanga",
+      "Jashore",
+      "Jhenaidah",
+      "Khulna",
+      "Kushtia",
+      "Magura",
+      "Meherpur",
+      "Narail",
+      "Satkhira"
+    ]
+  },
+
+  Barishal:{
+    bn:"বরিশাল",
+    lat:22.7010,
+    lon:90.3535,
+    districts:[
+      "Barguna",
+      "Barishal",
+      "Bhola",
+      "Jhalokathi",
+      "Patuakhali",
+      "Pirojpur"
+    ]
+  },
+
+  Sylhet:{
+    bn:"সিলেট",
+    lat:24.8949,
+    lon:91.8687,
+    districts:[
+      "Habiganj",
+      "Moulvibazar",
+      "Sunamganj",
+      "Sylhet"
+    ]
+  },
+
+  Rangpur:{
+    bn:"রংপুর",
+    lat:25.7439,
+    lon:89.2752,
+    districts:[
+      "Dinajpur",
+      "Gaibandha",
+      "Kurigram",
+      "Lalmonirhat",
+      "Nilphamari",
+      "Panchagarh",
+      "Rangpur",
+      "Thakurgaon"
+    ]
+  },
+
+  Mymensingh:{
+    bn:"ময়মনসিংহ",
+    lat:24.7471,
+    lon:90.4203,
+    districts:[
+      "Jamalpur",
+      "Mymensingh",
+      "Netrokona",
+      "Sherpur"
+    ]
+  }
+
+};
+
+
+/* =========================================================
+   FUN PLACES DATA
+========================================================= */
+
+const PLACES = [
+  ["Cox's Bazar",27,72,"🌧️"],
+  ["Sylhet",28,61,"🌦️"],
+  ["Sajek",24,42,"☁️"],
+  ["Khulna",27,70,"🌧️"],
+  ["Dhaka",30,35,"🌤️"],
+  ["Rajshahi",31,18,"☀️"],
+  ["Rangpur",29,25,"☁️"],
+  ["Barishal",28,55,"🌦️"]
+];
+
+
+/* =========================================================
+   STATE
+========================================================= */
+
+const state = {
+
+  location:{
+    name:"Khulna",
+    division:"Khulna",
+    lat:22.8456,
+    lon:89.5403
+  },
+
+  weather:null,
+
+  charts:{
+    main:null,
+    history:null,
+    analytics:null
+  },
+
+  chartMetric:"temp",
+
+  selectedDivision:"Khulna"
+
+};
+
+
+/* =========================================================
+   HELPERS
+========================================================= */
+
+const $ = selector =>
+  document.querySelector(selector);
+
+const $$ = selector =>
+  [...document.querySelectorAll(selector)];
+
+
+function toast(message){
+
+  const element = $("#toast");
+
+  element.textContent = message;
+
+  element.classList.add("show");
+
+  clearTimeout(window.__toastTimer);
+
+  window.__toastTimer =
+    setTimeout(
+      () =>
+        element.classList.remove("show"),
+      3000
+    );
+}
+
+
+function setLoading(active){
+
+  $("#loader")
+    .classList
+    .toggle("show",active);
+
+}
+
+
+function escapeHTML(value){
+
+  return String(value).replace(
+    /[&<>"']/g,
+
+    character => ({
+      "&":"&amp;",
+      "<":"&lt;",
+      ">":"&gt;",
+      '"':"&quot;",
+      "'":"&#039;"
+    }[character])
+  );
+
+}
+
+
+/* =========================================================
+   WEATHER ICON / CONDITION
+========================================================= */
+
+function weatherInfo(code){
+
+  const map = {
+
+    0:["Clear sky","☀️"],
+    1:["Mainly clear","🌤️"],
+    2:["Partly cloudy","⛅"],
+    3:["Cloudy","☁️"],
+
+    45:["Fog","🌫️"],
+    48:["Fog","🌫️"],
+
+    51:["Light drizzle","🌦️"],
+    53:["Drizzle","🌦️"],
+    55:["Heavy drizzle","🌧️"],
+
+    61:["Light Rain","🌧️"],
+    63:["Rain","🌧️"],
+    65:["Heavy Rain","🌧️"],
+
+    66:["Freezing rain","🌧️"],
+    67:["Freezing rain","🌧️"],
+
+    71:["Light snow","🌨️"],
+    73:["Snow","🌨️"],
+    75:["Heavy snow","❄️"],
+
+    80:["Rain showers","🌦️"],
+    81:["Rain showers","🌧️"],
+    82:["Heavy showers","🌧️"],
+
+    95:["Thunderstorm","⛈️"],
+    96:["Thunderstorm","⛈️"],
+    99:["Thunderstorm","⛈️"]
+
+  };
+
+  return map[code] ||
+    ["Mixed weather","🌤️"];
+}
+
+
+/* =========================================================
+   DEMO WEATHER GENERATOR
+========================================================= */
+
+function demoWeather(location){
+
+  const seed =
+    Math.abs(
+      Math.round(
+        location.lat * 100 +
+        location.lon * 10
+      )
+    );
+
+  const base =
+    26 + (seed % 7);
+
+  let rain = 70 - (seed % 22);
+
+  const name =
+    location.name.toLowerCase();
+
+  if(name.includes("raj")){
+    rain = 18;
+  }
+
+  if(name.includes("dhaka")){
+    rain = 38;
+  }
+
+  const hourly = [];
+
+  const daily = [];
+
+  const now = new Date();
+
+
+  /* 24 HOURS */
+
+  for(let i=0;i<24;i++){
+
+    const time =
+      new Date(now);
+
+    time.setHours(
+      now.getHours()+i,
+      0,
+      0,
+      0
+    );
+
+    const temperature =
+      Math.round(
+        base +
+        Math.sin(i/3)*3 -
+        (i>15 ? 1 : 0)
+      );
+
+    const rainProbability =
+      Math.max(
+        5,
+        Math.min(
+          90,
+          rain +
+          Math.round(
+            Math.sin(i/2)*18
+          )
+        )
+      );
+
+    hourly.push({
+
+      time:time.toISOString(),
+
+      temp:temperature,
+
+      feels:temperature+3,
+
+      humidity:
+        76 +
+        Math.round(
+          Math.cos(i/3)*10
+        ),
+
+      rain:rainProbability,
+
+      wind:
+        10 +
+        Math.round(
+          Math.sin(i/2)*5
+        ),
+
+      code:
+        rainProbability>62
+          ?61
+          :rainProbability>35
+            ?2
+            :0
+
+    });
+
+  }
+
+
+  /* 7 DAYS */
+
+  for(let i=0;i<7;i++){
+
+    const date =
+      new Date(now);
+
+    date.setDate(
+      now.getDate()+i
+    );
+
+    const high =
+      Math.round(
+        base +
+        2 +
+        Math.sin(i)*2
+      );
+
+    const low =
+      high-4;
+
+    daily.push({
+
+      date:
+        date.toISOString()
+          .slice(0,10),
+
+      hi:high,
+
+      lo:low,
+
+      rain:
+        Math.max(
+          8,
+          Math.min(
+            90,
+            rain +
+            Math.round(
+              Math.sin(i*1.3)*22
+            )
+          )
+        ),
+
+      code:
+        rain>55
+          ?61
+          :(i%3===0 ? 2 : 0)
+
+    });
+
+  }
+
+
+  return {
+
+    current:{
+
+      temp:base,
+
+      feels:base+3,
+
+      humidity:82,
+
+      wind:14,
+
+      pressure:1012,
+
+      visibility:8,
+
+      uv:3,
+
+      rain:hourly[0].rain,
+
+      code:hourly[0].code,
+
+      windDir:"NE"
+
+    },
+
+    hourly,
+
+    daily,
+
+    sun:{
+
+      sunrise:"5:42 AM",
+
+      sunset:"6:03 PM",
+
+      day:"12h 21m",
+
+      moonrise:"8:14 PM",
+
+      moonset:"6:20 AM",
+
+      phase:"Waxing"
+
+    },
+
+    air:{
+
+      aqi:52,
+
+      pm25:18,
+
+      pm10:34,
+
+      no2:22
+
+    }
+
+  };
+
+}
+
+
+/* =========================================================
+   GEOCODING
+========================================================= */
+
+async function geocode(name){
+
+  const url =
+    "https://geocoding-api.open-meteo.com/v1/search?" +
+    new URLSearchParams({
+
+      name,
+
+      count:8,
+
+      language:"en",
+
+      format:"json",
+
+      countryCode:"BD"
+
+    });
+
+  const response =
+    await fetch(url);
+
+  if(!response.ok){
+    throw new Error("geocode");
+  }
+
+  const data =
+    await response.json();
+
+  if(
+    !data.results ||
+    !data.results.length
+  ){
+    throw new Error("notfound");
+  }
+
+  const result =
+    data.results[0];
+
+  return {
+
+    name:result.name,
+
+    division:
+      result.admin1 || "",
+
+    lat:result.latitude,
+
+    lon:result.longitude
+
+  };
+
+}
+
+
+/* =========================================================
+   LIVE WEATHER
+========================================================= */
+
+async function fetchLive(location){
+
+  const parameters =
+    new URLSearchParams({
+
+      latitude:location.lat,
+
+      longitude:location.lon,
+
+      timezone:"auto",
+
+      forecast_days:"7",
+
+      current:
+        "temperature_2m,"+
+        "relative_humidity_2m,"+
+        "apparent_temperature,"+
+        "is_day,"+
+        "precipitation,"+
+        "weather_code,"+
+        "pressure_msl,"+
+        "wind_speed_10m,"+
+        "wind_direction_10m",
+
+      hourly:
+        "temperature_2m,"+
+        "apparent_temperature,"+
+        "relative_humidity_2m,"+
+        "precipitation_probability,"+
+        "weather_code,"+
+        "wind_speed_10m",
+
+      daily:
+        "weather_code,"+
+        "temperature_2m_max,"+
+        "temperature_2m_min,"+
+        "precipitation_probability_max,"+
+        "sunrise,"+
+        "sunset,"+
+        "daylight_duration"
+
+    });
+
+
+  const weatherResponse =
+    await fetch(
+      `https://api.open-meteo.com/v1/forecast?${parameters}`
+    );
+
+
+  const airResponse =
+    await fetch(
+      "https://air-quality-api.open-meteo.com/v1/air-quality?" +
+      new URLSearchParams({
+
+        latitude:location.lat,
+
+        longitude:location.lon,
+
+        timezone:"auto",
+
+        hourly:
+          "us_aqi,"+
+          "pm2_5,"+
+          "pm10,"+
+          "nitrogen_dioxide",
+
+        forecast_days:2
+
+      })
+    );
+
+
+  if(!weatherResponse.ok){
+    throw new Error("weather");
+  }
+
+
+  const weather =
+    await weatherResponse.json();
+
+
+  const air =
+    airResponse.ok
+      ? await airResponse.json()
+      : null;
+
+
+  const hourly =
+    weather.hourly.time.map(
+      (time,index) => ({
+
+        time,
+
+        temp:
+          weather.hourly
+            .temperature_2m[index],
+
+        feels:
+          weather.hourly
+            .apparent_temperature[index],
+
+        humidity:
+          weather.hourly
+            .relative_humidity_2m[index],
+
+        rain:
+          weather.hourly
+            .precipitation_probability[index],
+
+        wind:
+          weather.hourly
+            .wind_speed_10m[index],
+
+        code:
+          weather.hourly
+            .weather_code[index]
+
+      })
+    );
+
+
+  const current =
+    weather.current;
+
+  const daily =
+    weather.daily;
+
+
+  const firstCurrentHour =
+    Math.max(
+      0,
+      hourly.findIndex(
+        item =>
+          new Date(item.time)>=new Date()
+      )
+    );
+
+
+  return {
+
+    current:{
+
+      temp:
+        current.temperature_2m,
+
+      feels:
+        current.apparent_temperature,
+
+      humidity:
+        current.relative_humidity_2m,
+
+      wind:
+        current.wind_speed_10m,
+
+      pressure:
+        current.pressure_msl,
+
+      visibility:8,
+
+      uv:3,
+
+      rain:
+        current.precipitation>0
+          ? 60
+          : Math.max(
+              5,
+              hourly[0]?.rain || 5
+            ),
+
+      code:
+        current.weather_code,
+
+      windDir:
+        degToDir(
+          current.wind_direction_10m
+        )
+
+    },
+
+    hourly:
+      hourly.slice(
+        firstCurrentHour,
+        firstCurrentHour+24
+      ),
+
+    daily:
+      daily.time.map(
+        (date,index) => ({
+
+          date,
+
+          hi:
+            daily.temperature_2m_max[index],
+
+          lo:
+            daily.temperature_2m_min[index],
+
+          rain:
+            daily
+              .precipitation_probability_max[index],
+
+          code:
+            daily.weather_code[index]
+
+        })
+      ),
+
+    sun:{
+
+      sunrise:
+        fmtTime(
+          daily.sunrise[0]
+        ),
+
+      sunset:
+        fmtTime(
+          daily.sunset[0]
+        ),
+
+      day:
+        fmtDuration(
+          daily.daylight_duration[0]
+        ),
+
+      moonrise:"—",
+
+      moonset:"—",
+
+      phase:"—"
+
+    },
+
+    air:{
+
+      aqi:
+        air?.hourly?.us_aqi?.[0] ?? 52,
+
+      pm25:
+        air?.hourly?.pm2_5?.[0] ?? 18,
+
+      pm10:
+        air?.hourly?.pm10?.[0] ?? 34,
+
+      no2:
+        air?.hourly?.nitrogen_dioxide?.[0] ?? 22
+
+    }
+
+  };
+
+}
+
+
+/* =========================================================
+   TIME HELPERS
+========================================================= */
+
+function degToDir(degrees){
+
+  const directions =
+    [
+      "N",
+      "NE",
+      "E",
+      "SE",
+      "S",
+      "SW",
+      "W",
+      "NW"
+    ];
+
+  return directions[
+    Math.round(degrees/45)%8
+  ];
+
+}
+
+
+function fmtTime(iso){
+
+  if(!iso){
+    return "—";
+  }
+
+  return new Date(iso)
+    .toLocaleTimeString(
+      "en-US",
+      {
+        hour:"numeric",
+        minute:"2-digit"
+      }
+    );
+
+}
+
+
+function fmtDuration(seconds){
+
+  if(!Number.isFinite(seconds)){
+    return "—";
+  }
+
+  return (
+    Math.floor(seconds/3600)
+    +
+    "h "
+    +
+    Math.round(
+      (seconds%3600)/60
+    )
+    +
+    "m"
+  );
+
+}
+
+
+function dayName(date,index){
+
+  if(index===0){
+    return "Today";
+  }
+
+  return new Date(date)
+    .toLocaleDateString(
+      "en-US",
+      {
+        weekday:"short"
+      }
+    );
+
+}
+
+
+/* =========================================================
+   LOAD LOCATION
+========================================================= */
+
+async function loadLocation(location){
+
+  setLoading(true);
+
+  $("#status").textContent =
+    "🌦️ আবহাওয়া তথ্য লোড হচ্ছে...";
+
+
+  try{
+
+    state.location =
+      location;
+
+
+    state.weather =
+      DEMO_MODE
+        ? demoWeather(location)
+        : await fetchLive(location);
+
+
+    renderAll();
+
+
+    localStorage.setItem(
+      "weatherbd:lastLocation",
+      JSON.stringify(location)
+    );
+
+
+    $("#status").innerHTML =
+      `আপডেট হয়েছে: ${escapeHTML(location.name)}
+       ·
+       ${
+         DEMO_MODE
+           ? '<span class="demo">Demo Data</span>'
+           : 'Live Weather Data'
+       }`;
+
+
+  }catch(error){
+
+    console.error(error);
+
+    $("#status").textContent =
+      "আবহাওয়ার তথ্য এখন পাওয়া যাচ্ছে না। " +
+      "কিছুক্ষণ পরে আবার চেষ্টা করুন।";
+
+
+    toast(
+      error.message==="notfound"
+        ? "এই location পাওয়া যায়নি।"
+        : "আবহাওয়ার তথ্য এখন পাওয়া যাচ্ছে না।"
+    );
+
+
+  }finally{
+
+    setLoading(false);
+
+  }
+
+}
+
+
+/* =========================================================
+   RENDER EVERYTHING
+========================================================= */
+
+function renderAll(){
+
+  const weather =
+    state.weather;
+
+  const current =
+    weather.current;
+
+  const [condition,icon] =
+    weatherInfo(
+      current.code
+    );
+
+
+  $("#cityName")
+    .textContent =
+    `${state.location.name}, বাংলাদেশ`;
+
+
+  $("#coords")
+    .textContent =
+    state.location.division
+      ? `${state.location.division} Division · Bangladesh`
+      : "Bangladesh";
+
+
+  $("#weatherIcon")
+    .textContent =
+    icon;
+
+
+  $("#temp")
+    .textContent =
+    Math.round(current.temp);
+
+
+  $("#condition")
+    .textContent =
+    condition;
+
+
+  $("#feels")
+    .textContent =
+    Math.round(current.feels);
+
+
+  $("#humidity")
+    .textContent =
+    `${Math.round(current.humidity)}%`;
+
+
+  $("#wind")
+    .textContent =
+    `${Math.round(current.wind)} km/h`;
+
+
+  $("#pressure")
+    .textContent =
+    `${Math.round(current.pressure)} hPa`;
+
+
+  $("#visibility")
+    .textContent =
+    `${current.visibility} km`;
+
+
+  $("#uv")
+    .textContent =
+    current.uv;
+
+
+  $("#rainChance")
+    .textContent =
+    `${Math.round(current.rain)}%`;
+
+
+  $("#statFeels")
+    .textContent =
+    `${Math.round(current.feels)}°C`;
+
+
+  $("#statHumidity")
+    .textContent =
+    `${Math.round(current.humidity)}%`;
+
+
+  $("#statPressure")
+    .textContent =
+    `${Math.round(current.pressure)} hPa`;
+
+
+  $("#statVisibility")
+    .textContent =
+    `${current.visibility} km`;
+
+
+  $("#statRain")
+    .textContent =
+    `${Math.round(current.rain)}%`;
+
+
+  $("#dataMode")
+    .textContent =
+    DEMO_MODE
+      ? "Demo"
+      : "Live";
+
+
+  const card =
+    $("#weatherCard");
+
+
+  card.classList.toggle(
+    "rain",
+    current.rain>=55
+  );
+
+
+  card.classList.toggle(
+    "hot",
+    current.temp>=33
+  );
+
+
+  card.classList.toggle(
+    "night",
+    new Date().getHours()<6 ||
+    new Date().getHours()>=19
+  );
+
+
+  $("#rainParticles")
+    .style.display =
+    current.rain>=45
+      ? "block"
+      : "none";
+
+
+  renderAdvice(current);
+
+  renderUmbrella(current);
+
+  renderHourly(
+    weather.hourly
+  );
+
+  renderDaily(
+    weather.daily
+  );
+
+  renderSun(
+    weather.sun
+  );
+
+  renderAir(
+    weather.air
+  );
+
+  renderWind(
+    current
+  );
+
+  renderMapDetail();
+
+  renderPlaces();
+
+  renderActivities();
+
+  renderRoute();
+
+  renderCharts();
+
+}
+
+
+/* =========================================================
+   SMART ADVICE
+========================================================= */
+
+function renderAdvice(current){
+
+  if(current.rain>=55){
+
+    $("#adviceIcon")
+      .textContent="☂️";
+
+    $("#adviceTitle")
+      .textContent=
+      "আজ বাইরে বের হলে umbrella সঙ্গে রাখুন।";
+
+    $("#adviceText")
+      .textContent=
+      "বৃষ্টির সম্ভাবনা বেশি.";
+
+    return;
+
+  }
+
+
+  if(current.temp>=33){
+
+    $("#adviceIcon")
+      .textContent="🥵";
+
+    $("#adviceTitle")
+      .textContent=
+      "আজ বেশ গরম।";
+
+    $("#adviceText")
+      .textContent=
+      "পানি বেশি পান করুন এবং দুপুরের রোদ এড়িয়ে চলুন।";
+
+    return;
+
+  }
+
+
+  if(current.uv>=6){
+
+    $("#adviceIcon")
+      .textContent="☀️";
+
+    $("#adviceTitle")
+      .textContent=
+      "UV level বেশি।";
+
+    $("#adviceText")
+      .textContent=
+      "বাইরে গেলে সাধারণ sun protection ব্যবহার করুন।";
+
+    return;
+
+  }
+
+
+  $("#adviceIcon")
+    .textContent="😎";
+
+  $("#adviceTitle")
+    .textContent=
+    "আজ বাইরে ঘোরার জন্য আবহাওয়া বেশ ভালো!";
+
+  $("#adviceText")
+    .textContent=
+    "আবহাওয়া মোটামুটি আরামদায়ক।";
+
+}
+
+
+/* =========================================================
+   UMBRELLA
+========================================================= */
+
+function renderUmbrella(current){
+
+  const probability =
+    Math.round(
+      current.rain
+    );
+
+  const pill =
+    $("#umbrellaPill");
+
+  const text =
+    $("#umbrellaText");
+
+
+  pill.className =
+    "pill " +
+    (
+      probability>=60
+        ? "yes"
+        : probability>=30
+          ? "maybe"
+          : "no"
+    );
+
+
+  if(probability>=60){
+
+    text.textContent =
+      "YES ☂️";
+
+    pill.textContent =
+      "বৃষ্টির সম্ভাবনা বেশি।";
+
+  }
+
+  else if(probability>=30){
+
+    text.textContent =
+      "MAYBE 🌦️";
+
+    pill.textContent =
+      "ছোট umbrella সঙ্গে রাখলে ভালো।";
+
+  }
+
+  else{
+
+    text.textContent =
+      "NO 😎";
+
+    pill.textContent =
+      "আজ বৃষ্টির সম্ভাবনা কম।";
+
+  }
+
+}
+
+
+/* =========================================================
+   HOURLY
+========================================================= */
+
+function renderHourly(hourly){
+
+  $("#hourlyRow")
+    .innerHTML =
+    hourly.map(
+      (item,index) => {
+
+        const [,icon] =
+          weatherInfo(
+            item.code
+          );
+
+        const date =
+          new Date(item.time);
+
+        return `
+          <div class="hour ${index===0?"now":""}">
+
+            <b>
+              ${
+                index===0
+                  ? "Now"
+                  : date.toLocaleTimeString(
+                      "en-US",
+                      {
+                        hour:"numeric"
+                      }
+                    )
+              }
+            </b>
+
+            <div class="ico">
+              ${icon}
+            </div>
+
+            <b>
+              ${Math.round(item.temp)}°
+            </b>
+
+            <small>
+              🌧️ ${Math.round(item.rain)}%
+            </small>
+
+          </div>
+        `;
+
+      }
+    )
+    .join("");
+
+}
+
+
+/* =========================================================
+   DAILY
+========================================================= */
+
+function renderDaily(daily){
+
+  $("#dailyGrid")
+    .innerHTML =
+    daily
+      .slice(0,7)
+      .map(
+        (item,index) => {
+
+          const [,icon] =
+            weatherInfo(
+              item.code
+            );
+
+          return `
+            <div class="day">
+
+              <b>
+                ${dayName(
+                  item.date,
+                  index
+                )}
+              </b>
+
+              <div class="ico">
+                ${icon}
+              </div>
+
+              <strong>
+                ${Math.round(item.hi)}°
+                /
+                ${Math.round(item.lo)}°
+              </strong>
+
+              <small>
+                🌧️ ${Math.round(item.rain)}%
+              </small>
+
+            </div>
+          `;
+
+        }
+      )
+      .join("");
+
+}
+
+
+/* =========================================================
+   SUN
+========================================================= */
+
+function renderSun(sun){
+
+  $("#sunrise")
+    .textContent =
+    sun.sunrise;
+
+  $("#sunset")
+    .textContent =
+    sun.sunset;
+
+  $("#dayLength")
+    .textContent =
+    sun.day;
+
+  $("#moonrise")
+    .textContent =
+    sun.moonrise;
+
+  $("#moonPhase")
+    .textContent =
+    sun.phase;
+
+}
+
+
+/* =========================================================
+   AIR QUALITY
+========================================================= */
+
+function renderAir(air){
+
+  const aqi =
+    Math.round(
+      air.aqi
+    );
+
+
+  $("#aqi")
+    .textContent =
+    aqi;
+
+
+  $("#aqiLabel")
+    .textContent =
+    aqi<=50
+      ? "Good"
+      : aqi<=100
+        ? "Moderate"
+        : "Unhealthy";
+
+
+  $("#aqiPin")
+    .style.left =
+    Math.min(
+      96,
+      Math.max(
+        4,
+        aqi/2.5
+      )
+    )+"%";
+
+
+  $("#pm25")
+    .textContent =
+    `${Math.round(air.pm25)} μg/m³`;
+
+
+  $("#pm10")
+    .textContent =
+    `${Math.round(air.pm10)} μg/m³`;
+
+
+  $("#no2")
+    .textContent =
+    `${Math.round(air.no2)} μg/m³`;
+
+
+  $("#aqiText")
+    .textContent =
+    aqi<=50
+      ? "বাতাসের মান ভালো।"
+      : aqi<=100
+        ? "বাতাসের মান মোটামুটি ভালো, তবে sensitive people-এর জন্য সতর্ক থাকা ভালো।"
+        : "বাতাসের মান দুর্বল—অপ্রয়োজনীয় দীর্ঘ outdoor exposure কমানো ভালো।";
+
+
+  const uv =
+    state.weather.current.uv;
+
+
+  $("#uvBig")
+    .textContent =
+    uv;
+
+
+  $("#uvLabel")
+    .textContent =
+    uv<3
+      ? "Low"
+      : uv<6
+        ? "Moderate"
+        : uv<8
+          ? "High"
+          : uv<11
+            ? "Very High"
+            : "Extreme";
+
+
+  $("#uvPin")
+    .style.left =
+    Math.min(
+      97,
+      uv/11*100
+    )+"%";
+
+
+  $("#uvText")
+    .textContent =
+    uv<3
+      ? "UV কম।"
+      : uv<6
+        ? "UV মাঝারি। দীর্ঘ সময় বাইরে থাকলে সাধারণ sun protection ব্যবহার করা ভালো।"
+        : "UV বেশি। বাইরে গেলে সাধারণ sun protection ব্যবহার করা ভালো।";
+
+}
+
+
+/* =========================================================
+   WIND
+========================================================= */
+
+function renderWind(current){
+
+  $("#windCompass")
+    .textContent =
+    `${Math.round(current.wind)} km/h`;
+
+
+  $("#windDir")
+    .textContent =
+    current.windDir;
+
+
+  const directions =
+    [
+      "N",
+      "NE",
+      "E",
+      "SE",
+      "S",
+      "SW",
+      "W",
+      "NW"
+    ];
+
+
+  const index =
+    directions.indexOf(
+      current.windDir
+    );
+
+
+  $("#needle")
+    .style.transform =
+    `
+      translate(-50%,-100%)
+      rotate(${index*45}deg)
+    `;
+
+}
+
+
+/* =========================================================
+   MAP
+========================================================= */
+
+function renderMapDetail(){
+
+  const division =
+    DIVISIONS[
+      state.selectedDivision
+    ] ||
+    DIVISIONS.Khulna;
+
+
+  $("#mapDetail")
+    .innerHTML = `
+      <b>
+        ${division.bn}
+        (${state.selectedDivision})
+      </b>
+
+      <br>
+
+      ${
+        weatherInfo(
+          state.weather.current.code
+        )[1]
+      }
+
+      ${Math.round(
+        state.weather.current.temp
+      )}°C
+
+      · Rain:
+
+      ${Math.round(
+        state.weather.current.rain
+      )}%
+    `;
+
+}
+
+
+/* =========================================================
+   BEST PLACES
+========================================================= */
+
+function renderPlaces(){
+
+  const sorted =
+    [...PLACES]
+      .map(place => ({
+
+        ...place,
+
+        score:
+          Math.max(
+            55,
+            Math.min(
+              97,
+              100 -
+              Math.round(
+                Math.abs(
+                  place[1]-28
+                )*5
+              ) -
+              Math.round(
+                place[2]/7
+              )
+            )
+          )
+
+      }))
+      .sort(
+        (a,b) =>
+          b.score-a.score
+      );
+
+
+  $("#places")
+    .innerHTML =
+    sorted
+      .slice(0,4)
+      .map(
+        (place,index) => `
+          <div class="place">
+
+            <b>
+              ${index+1}.
+              ${place[0]}
+            </b>
+
+            <span>
+              ${place[3]}
+              ${place.score}%
+            </span>
+
+          </div>
+        `
+      )
+      .join("");
+
+}
+
+
+/* =========================================================
+   ACTIVITIES
+========================================================= */
+
+function renderActivities(){
+
+  const current =
+    state.weather.current;
+
+
+  const rain =
+    current.rain;
+
+  const temperature =
+    current.temp;
+
+
+  const status =
+    rain>70
+      ? "Not Ideal"
+      : rain>45
+        ? "Moderate"
+        : temperature>34
+          ? "Moderate"
+          : "Good";
+
+
+  const activities = [
+
+    ["🏃","Exercise"],
+    ["📸","Photography"],
+    ["🏖️","Beach"],
+    ["🚶","Walking"],
+    ["🌳","Outdoor"],
+    ["🚗","Travel"]
+
+  ];
+
+
+  $("#activities")
+    .innerHTML =
+    activities
+      .map(
+        item => `
+          <div class="activity">
+
+            <div class="emoji">
+              ${item[0]}
+            </div>
+
+            <b>
+              ${item[1]}
+            </b>
+
+            <small>
+              ${
+                status==="Good"
+                  ? "Excellent"
+                  : status
+              }
+            </small>
+
+          </div>
+        `
+      )
+      .join("");
+
+}
+
+
+/* =========================================================
+   TRAVEL
+========================================================= */
+
+function travelPoint(name){
+
+  const locations = {
+
+    Dhaka:
+      ["Dhaka",30,35,"🌤️"],
+
+    Chattogram:
+      ["Chattogram",29,30,"🌤️"],
+
+    "Cox's Bazar":
+      ["Cox's Bazar",27,70,"🌧️"],
+
+    Khulna:
+      ["Khulna",27,70,"🌧️"],
+
+    Sylhet:
+      ["Sylhet",28,61,"🌦️"],
+
+    Rajshahi:
+      ["Rajshahi",31,18,"☀️"],
+
+    Barishal:
+      ["Barishal",28,55,"🌦️"],
+
+    Rangpur:
+      ["Rangpur",29,25,"☁️"]
+
+  };
+
+
+  return (
+    locations[name] ||
+    locations.Dhaka
+  );
+
+}
+
+
+function renderRoute(){
+
+  const from =
+    $("#fromSelect").value;
+
+  const to =
+    $("#toSelect").value;
+
+
+  const start =
+    travelPoint(from);
+
+  const end =
+    travelPoint(to);
+
+
+  const middle =
+    from==="Dhaka" &&
+    to==="Cox's Bazar"
+      ? "Chattogram"
+      : "";
+
+
+  const points =
+    [start];
+
+
+  if(middle){
+    points.push(
+      travelPoint(middle)
+    );
+  }
+
+
+  points.push(end);
+
+
+  $("#route")
+    .innerHTML =
+    points
+      .map(
+        (point,index) => `
+
+          ${
+            index
+              ? '<span class="arrow">↓</span>'
+              : ''
+          }
+
+          <div class="route-stop">
+
+            <b>
+              ${point[3]}
+              ${point[0]}
+            </b>
+
+            <br>
+
+            ${point[1]}°C
+            · Rain ${point[2]}%
+
+          </div>
+
+        `
+      )
+      .join("");
+
+
+  const score =
+    Math.round(
+      100 -
+      (
+        (start[2]+end[2])/2
+      )*.35 -
+      Math.max(
+        0,
+        Math.abs(
+          start[1]-end[1]
+        )-4
+      )*2
+    );
+
+
+  $("#travelScore")
+    .textContent =
+    `${score}/100`;
+
+
+  $("#travelProgress")
+    .style.width =
+    score+"%";
+
+}
+
+
+/* =========================================================
+   CHART
+========================================================= */
+
+function makeChart(
+  canvas,
+  type,
+  data
+){
+
+  return new Chart(
+    canvas,
+    {
+
+      type,
+
+      data,
+
+      options:{
+
+        responsive:true,
+
+        maintainAspectRatio:false,
+
+        interaction:{
+          mode:"index",
+          intersect:false
+        },
+
+        plugins:{
+          legend:{
+            display:true
+          }
+        },
+
+        scales:{
+
+          x:{
+            grid:{
+              display:false
+            }
+          },
+
+          y:{
+            beginAtZero:false
+          }
+
+        },
+
+        animation:{
+          duration:650
+        }
+
+      }
+
+    }
+  );
+
+}
+
+
+/* =========================================================
+   RENDER CHARTS
+========================================================= */
+
+function renderCharts(){
+
+  const hourly =
+    state.weather
+      .hourly
+      .slice(0,24);
+
+
+  const labels =
+    hourly.map(
+      item =>
+        new Date(item.time)
+          .toLocaleTimeString(
+            "en-US",
+            {
+              hour:"numeric"
+            }
+          )
+    );
+
+
+  const values = {
+
+    temp:
+      hourly.map(
+        item =>
+          Math.round(item.temp)
+      ),
+
+    feels:
+      hourly.map(
+        item =>
+          Math.round(item.feels)
+      ),
+
+    humidity:
+      hourly.map(
+        item =>
+          Math.round(item.humidity)
+      ),
+
+    rain:
+      hourly.map(
+        item =>
+          Math.round(item.rain)
+      )
+
+  };
+
+
+  const titles = {
+
+    temp:"Temperature °C",
+
+    feels:"Feels Like °C",
+
+    humidity:"Humidity %",
+
+    rain:"Rain Probability %"
+
+  };
+
+
+  if(state.charts.main){
+    state.charts.main.destroy();
+  }
+
+
+  state.charts.main =
+    makeChart(
+      $("#mainChart"),
+      "line",
+      {
+
+        labels,
+
+        datasets:[
+
+          {
+
+            label:
+              titles[
+                state.chartMetric
+              ],
+
+            data:
+              values[
+                state.chartMetric
+              ],
+
+            tension:.35,
+
+            fill:true,
+
+            borderWidth:3,
+
+            pointRadius:2
+
+          }
+
+        ]
+
+      }
+    );
+
+
+  /* HISTORY */
+
+  const daily =
+    state.weather
+      .daily
+      .slice(0,7);
+
+
+  const historyLabels =
+    daily.map(
+      (item,index) =>
+        dayName(
+          item.date,
+          index
+        )
+    );
+
+
+  if(state.charts.history){
+    state.charts.history.destroy();
+  }
+
+
+  state.charts.history =
+    makeChart(
+      $("#historyChart"),
+      "bar",
+      {
+
+        labels:historyLabels,
+
+        datasets:[
+
+          {
+
+            label:"Average °C",
+
+            data:
+              daily.map(
+                item =>
+                  Math.round(
+                    (item.hi+item.lo)/2
+                  )
+              ),
+
+            borderRadius:8
+
+          },
+
+          {
+
+            label:"Rain %",
+
+            data:
+              daily.map(
+                item =>
+                  Math.round(item.rain)
+              ),
+
+            borderRadius:8
+
+          }
+
+        ]
+
+      }
+    );
+
+
+  /* ADVANCED ANALYTICS */
+
+  if(state.charts.analytics){
+    state.charts.analytics.destroy();
+  }
+
+
+  state.charts.analytics =
+    makeChart(
+      $("#analyticsChart"),
+      "line",
+      {
+
+        labels,
+
+        datasets:[
+
+          {
+
+            label:"Temp °C",
+
+            data:
+              hourly.map(
+                item =>
+                  Math.round(item.temp)
+              ),
+
+            tension:.35,
+
+            borderWidth:2
+
+          },
+
+          {
+
+            label:"Humidity %",
+
+            data:
+              hourly.map(
+                item =>
+                  Math.round(item.humidity)
+              ),
+
+            tension:.35,
+
+            borderWidth:2
+
+          },
+
+          {
+
+            label:"Rain %",
+
+            data:
+              hourly.map(
+                item =>
+                  Math.round(item.rain)
+              ),
+
+            tension:.35,
+
+            borderWidth:2
+
+          }
+
+        ]
+
+      }
+    );
+
+}
+
+
+/* =========================================================
+   INITIAL SELECTORS
+========================================================= */
+
+function initSelectors(){
+
+  $("#divisionSelect")
+    .innerHTML =
+    '<option value="">বিভাগ নির্বাচন করুন</option>' +
+
+    Object.keys(DIVISIONS)
+      .map(
+        key =>
+          `
+          <option value="${key}">
+            ${DIVISIONS[key].bn}
+            (${key})
+          </option>
+          `
+      )
+      .join("");
+
+
+  $("#divisionList")
+    .innerHTML =
+    Object.keys(DIVISIONS)
+      .map(
+        key =>
+          `
+          <button
+            class="division-btn ${
+              key==="Khulna"
+                ? "active"
+                : ""
+            }"
+            data-division="${key}"
+          >
+
+            ${DIVISIONS[key].bn}
+
+            <br>
+
+            <small>
+              ${key}
+            </small>
+
+          </button>
+          `
+      )
+      .join("");
+
+
+  const names = [
+
+    "Dhaka",
+    "Chattogram",
+    "Cox's Bazar",
+    "Khulna",
+    "Sylhet",
+    "Rajshahi",
+    "Barishal",
+    "Rangpur"
+
+  ];
+
+
+  $("#fromSelect")
+    .innerHTML =
+    names
+      .map(
+        name =>
+          `<option>${name}</option>`
+      )
+      .join("");
+
+
+  $("#toSelect")
+    .innerHTML =
+    names
+      .map(
+        name =>
+          `<option>${name}</option>`
+      )
+      .join("");
+
+
+  $("#fromSelect").value =
+    "Dhaka";
+
+  $("#toSelect").value =
+    "Cox's Bazar";
+
+
+  $$(".division-btn")
+    .forEach(
+      button =>
+        button.addEventListener(
+          "click",
+          () =>
+            selectDivision(
+              button.dataset.division
+            )
+        )
+    );
+
+}
+
+
+/* =========================================================
+   DISTRICT DROPDOWN
+========================================================= */
+
+function populateDistricts(
+  division
+){
+
+  const data =
+    DIVISIONS[division];
+
+
+  $("#districtSelect")
+    .innerHTML =
+    '<option value="">জেলা নির্বাচন করুন</option>' +
+
+    (
+      data
+        ? data.districts
+        : []
+    )
+      .map(
+        district =>
+          `<option>${district}</option>`
+      )
+      .join("");
+
+}
+
+
+/* =========================================================
+   SELECT DIVISION
+========================================================= */
+
+function selectDivision(
+  division
+){
+
+  state.selectedDivision =
+    division;
+
+
+  const data =
+    DIVISIONS[division];
+
+
+  $$(".division-btn")
+    .forEach(
+      button =>
+        button.classList.toggle(
+          "active",
+          button.dataset.division===division
+        )
+    );
+
+
+  $("#divisionSelect").value =
+    division;
+
+
+  populateDistricts(
+    division
+  );
+
+
+  loadLocation({
+
+    name:division,
+
+    division,
+
+    lat:data.lat,
+
+    lon:data.lon
+
+  });
+
+}
+
+
+/* =========================================================
+   SEARCH SUGGESTIONS
+========================================================= */
+
+function searchSuggestions(
+  query
+){
+
+  if(!query.trim()){
+
+    $("#searchResults")
+      .style.display =
+      "none";
+
+    return;
+
+  }
+
+
+  const all = [];
+
+
+  Object.entries(
+    DIVISIONS
+  )
+  .forEach(
+    ([division,data]) => {
+
+      data.districts
+        .forEach(
+          district => {
+
+            all.push({
+
+              name:district,
+
+              division,
+
+              lat:data.lat,
+
+              lon:data.lon
+
+            });
+
+          }
+        );
+
+    }
+  );
+
+
+  const matches =
+    all
+      .filter(
+        item =>
+
+          item.name
+            .toLowerCase()
+            .includes(
+              query.toLowerCase()
+            )
+
+          ||
+
+          item.division
+            .toLowerCase()
+            .includes(
+              query.toLowerCase()
+            )
+
+      )
+      .slice(0,7);
+
+
+  $("#searchResults")
+    .innerHTML =
+    matches
+      .map(
+        item =>
+          `
+          <button
+            data-name="${escapeHTML(item.name)}"
+            data-div="${item.division}"
+          >
+
+            ${escapeHTML(item.name)}
+
+            <small>
+              · ${item.division}
+            </small>
+
+          </button>
+          `
+      )
+      .join("");
+
+
+  $("#searchResults")
+    .style.display =
+    matches.length
+      ? "block"
+      : "none";
+
+
+  $$("#searchResults button")
+    .forEach(
+      button =>
+        button.addEventListener(
+          "click",
+          () => {
+
+            const data =
+              DIVISIONS[
+                button.dataset.div
+              ];
+
+
+            $("#searchInput")
+              .value =
+              button.dataset.name;
+
+
+            $("#searchResults")
+              .style.display =
+              "none";
+
+
+            loadLocation({
+
+              name:
+                button.dataset.name,
+
+              division:
+                button.dataset.div,
+
+              lat:data.lat,
+
+              lon:data.lon
+
+            });
+
+          }
+        )
+    );
+
+}
+
+
+/* =========================================================
+   SEARCH
+========================================================= */
+
+async function doSearch(){
+
+  const query =
+    $("#searchInput")
+      .value
+      .trim();
+
+
+  if(!query){
+
+    toast(
+      "একটি শহর বা জেলার নাম লিখুন।"
+    );
+
+    return;
+
+  }
+
+
+  if(DEMO_MODE){
+
+    const districts =
+      Object.entries(
+        DIVISIONS
+      )
+      .flatMap(
+        ([division,data]) =>
+          data.districts.map(
+            name => ({
+
+              name,
+
+              division,
+
+              lat:data.lat,
+
+              lon:data.lon
+
+            })
+          )
+      );
+
+
+    const found =
+      districts.find(
+        item =>
+          item.name
+            .toLowerCase() ===
+          query.toLowerCase()
+      );
+
+
+    if(found){
+
+      await loadLocation(
+        found
+      );
+
+      return;
+
+    }
+
+
+    const division =
+      Object.entries(
+        DIVISIONS
+      )
+      .find(
+        ([key,data]) =>
+          key.toLowerCase() ===
+          query.toLowerCase()
+          ||
+          data.bn === query
+      );
+
+
+    if(division){
+
+      selectDivision(
+        division[0]
+      );
+
+      return;
+
+    }
+
+
+    toast(
+      "এই location পাওয়া যায়নি।"
+    );
+
+    return;
+
+  }
+
+
+  try{
+
+    const location =
+      await geocode(query);
+
+    await loadLocation(
+      location
+    );
+
+  }catch(error){
+
+    toast(
+      error.message==="notfound"
+        ? "এই location পাওয়া যায়নি।"
+        : "Search করা যায়নি।"
+    );
+
+  }
+
+}
+
+
+/* =========================================================
+   THEME
+========================================================= */
+
+function initTheme(){
+
+  const saved =
+    localStorage.getItem(
+      "weatherbd:theme"
+    );
+
+
+  if(saved==="dark"){
+
+    document.body
+      .classList
+      .add("dark");
+
+  }
+
+
+  $("#themeBtn")
+    .textContent =
+    document.body.classList.contains("dark")
+      ? "🌙"
+      : "☀️";
+
+
+  $("#themeBtn")
+    .onclick =
+    () => {
+
+      document.body
+        .classList
+        .toggle("dark");
+
+
+      const dark =
+        document.body
+          .classList
+          .contains("dark");
+
+
+      localStorage.setItem(
+        "weatherbd:theme",
+        dark
+          ? "dark"
+          : "light"
+      );
+
+
+      $("#themeBtn")
+        .textContent =
+        dark
+          ? "🌙"
+          : "☀️";
+
+    };
+
+}
+
+
+/* =========================================================
+   NOTIFICATIONS
+========================================================= */
+
+function initNotifications(){
+
+  $$(".notify")
+    .forEach(
+      input => {
+
+        const key =
+          "weatherbd:notify:" +
+          input.dataset.type;
+
+
+        input.checked =
+          localStorage.getItem(key)
+          ===
+          "1";
+
+
+        input.onchange =
+          () => {
+
+            localStorage.setItem(
+              key,
+              input.checked
+                ? "1"
+                : "0"
+            );
+
+          };
+
+      }
+    );
+
+
+  $("#notifyBtn")
+    .onclick =
+    async () => {
+
+      if(!("Notification" in window)){
+
+        toast(
+          "এই browser notification support করে না।"
+        );
+
+        return;
+
+      }
+
+
+      const permission =
+        await Notification
+          .requestPermission();
+
+
+      toast(
+        permission==="granted"
+          ? "Notification permission দেওয়া হয়েছে।"
+          : "Notification permission দেওয়া হয়নি।"
+      );
+
+    };
+
+}
+
+
+/* =========================================================
+   WEATHER ASSISTANT
+========================================================= */
+
+function assistantAnswer(
+  question
+){
+
+  const current =
+    state.weather.current;
+
+
+  const lower =
+    question.toLowerCase();
+
+
+  if(
+    lower.includes("umbrella") ||
+    lower.includes("বৃষ্টি") ||
+    lower.includes("rain")
+  ){
+
+    if(current.rain>=55){
+
+      return `
+        আপনার selected location অনুযায়ী
+        বৃষ্টির সম্ভাবনা বেশি
+        (${Math.round(current.rain)}%)।
+        umbrella সঙ্গে রাখলে ভালো।
+      `;
+
+    }
+
+
+    return `
+      এখন বৃষ্টির সম্ভাবনা তুলনামূলক কম
+      (${Math.round(current.rain)}%)।
+    `;
+
+  }
+
+
+  if(
+    lower.includes("temperature") ||
+    lower.includes("তাপমাত্রা")
+  ){
+
+    return `
+      এখন তাপমাত্রা প্রায়
+      ${Math.round(current.temp)}°C
+      এবং feels like
+      ${Math.round(current.feels)}°C।
+    `;
+
+  }
+
+
+  if(
+    lower.includes("বাইরে") ||
+    lower.includes("যাওয়া") ||
+    lower.includes("out")
+  ){
+
+    if(current.rain>60){
+
+      return `
+        বৃষ্টির সম্ভাবনা বেশি,
+        তাই বাইরে গেলে umbrella সঙ্গে রাখুন।
+      `;
+
+    }
+
+
+    return `
+      আবহাওয়া মোটামুটি ভালো;
+      বাইরে যাওয়ার জন্য সময়টি বেশ ঠিক আছে।
+    `;
+
+  }
+
+
+  if(
+    lower.includes("রাত") ||
+    lower.includes("night")
+  ){
+
+    const index =
+      Math.min(
+        8,
+        state.weather.hourly.length-1
+      );
+
+
+    return `
+      রাতে তাপমাত্রা প্রায়
+      ${Math.round(
+        state.weather.hourly[index].temp
+      )}°C-এর কাছাকাছি থাকতে পারে।
+    `;
+
+  }
+
+
+  return `
+    বর্তমানে
+    ${state.location.name}-এ
+    ${Math.round(current.temp)}°C,
+    ${weatherInfo(current.code)[0].toLowerCase()}
+    এবং বৃষ্টির সম্ভাবনা
+    ${Math.round(current.rain)}%।
+  `;
+
+}
+
+
+function askAssistant(){
+
+  const input =
+    $("#assistantInput");
+
+
+  const question =
+    input.value.trim();
+
+
+  if(!question){
+    return;
+  }
+
+
+  $("#messages")
+    .insertAdjacentHTML(
+      "beforeend",
+      `
+      <div class="bubble user">
+        ${escapeHTML(question)}
+      </div>
+      `
+    );
+
+
+  input.value="";
+
+
+  setTimeout(
+    () => {
+
+      const answer =
+        assistantAnswer(
+          question
+        );
+
+
+      $("#messages")
+        .insertAdjacentHTML(
+          "beforeend",
+          `
+          <div class="bubble">
+            ${escapeHTML(answer)}
+          </div>
+          `
+        );
+
+
+      $("#messages")
+        .scrollTop =
+        $("#messages").scrollHeight;
+
+    },
+    180
+  );
+
+}
+
+
+/* =========================================================
+   EVENTS
+========================================================= */
+
+function initEvents(){
+
+  $("#searchBtn")
+    .onclick =
+    doSearch;
+
+
+  $("#searchInput")
+    .addEventListener(
+      "input",
+      event =>
+        searchSuggestions(
+          event.target.value
+        )
+    );
+
+
+  $("#searchInput")
+    .addEventListener(
+      "keydown",
+      event => {
+
+        if(event.key==="Enter"){
+          doSearch();
+        }
+
+      }
+    );
+
+
+  document.addEventListener(
+    "click",
+    event => {
+
+      if(
+        !event.target
+          .closest(".searchbox")
+      ){
+
+        $("#searchResults")
+          .style.display =
+          "none";
+
+      }
+
+    }
+  );
+
+
+  $("#divisionSelect")
+    .onchange =
+    event => {
+
+      if(event.target.value){
+
+        selectDivision(
+          event.target.value
+        );
+
+      }
+
+    };
+
+
+  $("#districtSelect")
+    .onchange =
+    event => {
+
+      if(!event.target.value){
+        return;
+      }
+
+
+      const division =
+        $("#divisionSelect")
+          .value;
+
+
+      const data =
+        DIVISIONS[
+          division
+        ];
+
+
+      loadLocation({
+
+        name:
+          event.target.value,
+
+        division,
+
+        lat:data.lat,
+
+        lon:data.lon
+
+      });
+
+    };
+
+
+  /* LOCATION */
+
+  $("#locBtn")
+    .onclick =
+    () => {
+
+      if(!navigator.geolocation){
+
+        toast(
+          "এই browser-এ location support নেই।"
+        );
+
+        return;
+
+      }
+
+
+      $("#status")
+        .textContent =
+        "📍 আপনার location নেওয়া হচ্ছে...";
+
+
+      navigator.geolocation
+        .getCurrentPosition(
+
+          async position => {
+
+            try{
+
+              const location = {
+
+                name:
+                  "আপনার অবস্থান",
+
+                division:
+                  "Bangladesh",
+
+                lat:
+                  position.coords.latitude,
+
+                lon:
+                  position.coords.longitude
+
+              };
+
+
+              await loadLocation(
+                location
+              );
+
+            }catch(error){
+
+              toast(
+                "Location-এর weather পাওয়া যায়নি।"
+              );
+
+            }
+
+          },
+
+
+          () => {
+
+            toast(
+              "লোকেশন permission দেওয়া হয়নি। আপনি নিচে শহর নির্বাচন করতে পারেন।"
+            );
+
+          },
+
+
+          {
+            enableHighAccuracy:false,
+            timeout:9000
+          }
+
+        );
+
+    };
+
+
+  /* MOBILE NAV */
+
+  $("#hamb")
+    .onclick =
+    () =>
+      $("#navLinks")
+        .classList
+        .toggle("open");
+
+
+  $$(".navlinks a")
+    .forEach(
+      link =>
+        link.onclick =
+          () =>
+            $("#navLinks")
+              .classList
+              .remove("open")
+    );
+
+
+  /* MAIN CHART */
+
+  $$(".chart-tabs[data-chart] .tab")
+    .forEach(
+      button =>
+        button.onclick =
+          () => {
+
+            $$(".chart-tabs[data-chart] .tab")
+              .forEach(
+                item =>
+                  item.classList
+                    .remove("active")
+              );
+
+
+            button.classList
+              .add("active");
+
+
+            state.chartMetric =
+              button.dataset.metric;
+
+
+            renderCharts();
+
+          }
+    );
+
+
+  /* HISTORY */
+
+  $$(".history-tab")
+    .forEach(
+      button =>
+        button.onclick =
+          () => {
+
+            $$(".history-tab")
+              .forEach(
+                item =>
+                  item.classList
+                    .remove("active")
+              );
+
+
+            button.classList
+              .add("active");
+
+
+            toast(
+              "History view পরিবর্তন করা হয়েছে।"
+            );
+
+          }
+    );
+
+
+  /* ANALYTICS */
+
+  $$(".analytics-tab")
+    .forEach(
+      button =>
+        button.onclick =
+          () => {
+
+            $$(".analytics-tab")
+              .forEach(
+                item =>
+                  item.classList
+                    .remove("active")
+              );
+
+
+            button.classList
+              .add("active");
+
+
+            toast(
+              button.dataset.range==="24"
+                ? "24 Hours selected"
+                : "7 Days selected"
+            );
+
+          }
+    );
+
+
+  /* RADAR */
+
+  $("#radarSlider")
+    .oninput =
+    event => {
+
+      const labels = [
+        "Now",
+        "+1 Hour",
+        "+2 Hours",
+        "+3 Hours"
+      ];
+
+
+      $("#radarLabel")
+        .textContent =
+        `${labels[event.target.value]} · Radar Demo`;
+
+    };
+
+
+  /* TRAVEL */
+
+  $("#fromSelect")
+    .onchange =
+    renderRoute;
+
+
+  $("#toSelect")
+    .onchange =
+    renderRoute;
+
+
+  /* ASSISTANT */
+
+  $("#askBtn")
+    .onclick =
+    askAssistant;
+
+
+  $("#assistantInput")
+    .onkeydown =
+    event => {
+
+      if(event.key==="Enter"){
+        askAssistant();
+      }
+
+    };
+
+}
+
+
+/* =========================================================
+   OPTIONAL PWA
+========================================================= */
+
+function registerPWA(){
+
+  if(
+    "serviceWorker" in navigator &&
+    location.protocol!=="file:"
+  ){
+
+    navigator.serviceWorker
+      .register("sw.js")
+      .catch(
+        () => {}
+      );
+
+  }
+
+}
+
+
+/* =========================================================
+   INIT
+========================================================= */
+
+async function init(){
+
+  initTheme();
+
+  initSelectors();
+
+  initEvents();
+
+  initNotifications();
+
+  registerPWA();
+
+
+  let location =
+    state.location;
+
+
+  const saved =
+    localStorage.getItem(
+      "weatherbd:lastLocation"
+    );
+
+
+  if(saved){
+
+    try{
+
+      location =
+        JSON.parse(saved);
+
+    }catch(error){
+
+      location =
+        state.location;
+
+    }
+
+  }
+
+
+  await loadLocation(
+    location
+  );
+
+}
+
+
+init();
+
+</script>
+
+</body>
+</html>
